@@ -1,0 +1,111 @@
+<div class="settings-page">
+    <h1 class="page-title">Cấu Hình</h1>
+    <p class="page-subtitle">
+        Cấu hình trọng số AI và định dạng CV mà hệ thống hỗ trợ. Các giá trị này
+        được lưu trên backend trong MongoDB.
+    </p>
+
+    <div *ngIf="isLoading" class="card loading-card">
+        <p>Đang tải cấu hình từ API <code>/api/settings</code>...</p>
+        <div class="spinner"></div>
+    </div>
+
+    <ng-container *ngIf="!isLoading">
+        <div *ngIf="errorMessage" class="alert alert-error">
+            {{ errorMessage }}
+        </div>
+
+        <div *ngIf="successMessage" class="alert alert-success">
+            {{ successMessage }}
+        </div>
+
+        <!-- Card: Trọng số tiêu chí -->
+        <section class="card">
+            <h2 class="card-title">Trọng số tiêu chí</h2>
+            <p class="card-subtitle">
+                Điều chỉnh tầm quan trọng của từng nhóm tiêu chí khi tính điểm phù hợp.
+            </p>
+
+            <div class="weights-grid">
+                <div class="field">
+                    <label>Kỹ năng (skills)</label>
+                    <div class="input-suffix">
+                        <input type="number" min="0" max="100" step="10" [(ngModel)]="settings.weights.skills"
+                            (ngModelChange)="onWeightsChanged('skills')" />
+                        <span class="suffix">%</span>
+                    </div>
+                    <small>Ví dụ: {{ settings.weights.skills }}%</small>
+                </div>
+
+                <div class="field">
+                    <label>Kinh nghiệm (experience)</label>
+                    <div class="input-suffix">
+                        <input type="number" min="0" max="100" step="10" [(ngModel)]="settings.weights.experience"
+                            (ngModelChange)="onWeightsChanged('experience')" />
+                        <span class="suffix">%</span>
+                    </div>
+                    <small>Ví dụ: {{ settings.weights.experience }}%</small>
+                </div>
+
+                <div class="field">
+                    <label>Học vấn (education)</label>
+                    <div class="input-suffix">
+                        <input type="number" min="0" max="100" step="10" [(ngModel)]="settings.weights.education"
+                            (ngModelChange)="onWeightsChanged('education')" />
+                        <span class="suffix">%</span>
+                    </div>
+                    <small>Ví dụ: {{ settings.weights.education }}%</small>
+                </div>
+
+                <div class="field">
+                    <label>Ngôn ngữ (languages)</label>
+                    <div class="input-suffix">
+                        <input type="number" min="0" max="100" step="10" [(ngModel)]="settings.weights.languages"
+                            (ngModelChange)="onWeightsChanged('languages')" />
+                        <span class="suffix">%</span>
+                    </div>
+                    <small>Ví dụ: {{ settings.weights.languages }}%</small>
+                </div>
+            </div>
+
+            <div class="weights-footer">
+                <div class="total" [class.invalid]="totalWeight !== 100">
+                    Tổng: <b>{{ totalWeight }}%</b>
+                    <span *ngIf="totalWeight !== 100"> (nên = 100%)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Card: Định dạng CV -->
+        <section class="card">
+            <h2 class="card-title">Định dạng CV được phép</h2>
+            <p class="card-subtitle">
+                Các setting này quyết định backend cho phép upload loại file nào.
+            </p>
+
+            <div class="formats">
+                <label class="checkbox">
+                    <input type="checkbox" [(ngModel)]="settings.fileFormats.pdf" />
+                    <span>PDF</span>
+                </label>
+
+                <label class="checkbox">
+                    <input type="checkbox" [(ngModel)]="settings.fileFormats.doc" />
+                    <span>Word (DOC/DOCX)</span>
+                </label>
+
+                <label class="checkbox">
+                    <input type="checkbox" [(ngModel)]="settings.fileFormats.image" />
+                    <span>Image (JPG/PNG)</span>
+                </label>
+            </div>
+        </section>
+
+        <div class="actions">
+            <button class="btn-primary" (click)="onSave()" [disabled]="isSaving || totalWeight !== 100">
+                <span *ngIf="!isSaving">Lưu cấu hình</span>
+                <span *ngIf="isSaving">Đang lưu...</span>
+            </button>
+        </div>
+    </ng-container>
+</div>

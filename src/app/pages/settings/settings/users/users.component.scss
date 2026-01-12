@@ -1,0 +1,153 @@
+.page {
+    padding: 24px 28px;
+}
+
+.head h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+}
+
+.head p {
+    margin: 0 0 18px;
+    color: #64748b;
+}
+
+.alert {
+    margin: 12px 0 16px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .25);
+    color: #b91c1c;
+    font-size: 13px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 16px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, .06);
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.field {
+    display: grid;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.field span {
+    font-size: 12px;
+    color: #475569;
+}
+
+.field input,
+.field select {
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 0 12px;
+    outline: none;
+}
+
+.field input:focus,
+.field select:focus {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
+
+.btn {
+    height: 40px;
+    border: none;
+    border-radius: 12px;
+    padding: 0 14px;
+    cursor: pointer;
+    background: #2563eb;
+    color: #fff;
+    margin-top: 14px;
+}
+
+.btn:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+}
+
+.btn--ghost {
+    background: #f1f5f9;
+    color: #0f172a;
+    margin-top: 0;
+}
+
+.btn--small {
+    height: 34px;
+    border-radius: 10px;
+    padding: 0 10px;
+    margin-top: 0;
+}
+
+.btn--danger {
+    background: #ef4444;
+}
+
+.tableWrap {
+    margin-top: 10px;
+    overflow: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #eef2f7;
+    vertical-align: top;
+}
+
+.table th {
+    text-align: left;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.uName {
+    font-weight: 700;
+}
+
+.uMeta {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.editBox {
+    display: grid;
+    gap: 8px;
+}
+
+.empty {
+    text-align: center;
+    color: #64748b;
+    padding: 18px 0;
+}
+
+@media (max-width: 1000px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}

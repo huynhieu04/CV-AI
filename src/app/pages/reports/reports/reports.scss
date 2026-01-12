@@ -1,0 +1,179 @@
+.page--reports {
+  .page__header {
+    margin-bottom: 16px;
+  }
+}
+
+/* CARD CHÍNH */
+.reports-card {
+  max-width: 1120px;
+  margin: 0 auto 32px;
+  padding: 20px 24px 24px;
+  border-radius: 24px;
+}
+
+.reports-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  .card__title {
+    font-size: 20px;
+  }
+
+  .card__sub {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #6b7280;
+  }
+}
+
+.reports-refresh-btn {
+  height: 32px;
+  padding-inline: 14px;
+  font-size: 13px;
+}
+
+/* MONO TEXT */
+.mono {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* LOADING / ERROR / EMPTY */
+.reports-loading,
+.reports-error,
+.reports-empty {
+  margin-top: 4px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reports-loading {
+  background: #f9fafb;
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    border: 2px solid #d1d5db;
+    border-top-color: #2563eb;
+    animation: spin 0.6s linear infinite;
+  }
+}
+
+.reports-error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.reports-empty {
+  background: #f9fafb;
+  margin-top: 8px;
+
+  &__icon {
+    font-size: 22px;
+  }
+
+  &__title {
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+
+  &__text {
+    font-size: 13px;
+    color: #6b7280;
+  }
+}
+
+/* GRID THỐNG KÊ */
+.reports-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.reports-stat {
+  border-radius: 18px;
+  padding: 14px 16px 16px;
+  background: #f9fafb;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .stat-label {
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .stat-caption {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+}
+
+/* Màu theo trạng thái */
+.reports-stat--primary {
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+}
+
+.reports-stat--success {
+  border: 1px solid #bbf7d0;
+  background: #ecfdf3;
+}
+
+.reports-stat--warning {
+  border: 1px solid #fed7aa;
+  background: #fffbeb;
+}
+
+.reports-stat--danger {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .reports-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .reports-card {
+    padding: 16px 14px 18px;
+  }
+
+  .reports-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,113 @@
+<div class="page">
+    <div class="head">
+        <h1>Quản Lý Người Dùng</h1>
+        <p>Admin tạo tài khoản cho nhân viên HR sử dụng hệ thống.</p>
+    </div>
+
+    <div class="alert" *ngIf="error">{{ error }}</div>
+
+    <div class="grid">
+        <!-- Column 1 -->
+        <section class="card">
+            <h2>1) Thêm user</h2>
+
+            <label class="field">
+                <span>Username</span>
+                <input [(ngModel)]="username" name="username" placeholder="vd: hr.thu" />
+            </label>
+
+            <label class="field">
+                <span>Password</span>
+                <input type="password" [(ngModel)]="password" name="password" placeholder="tối thiểu 6 ký tự" />
+            </label>
+
+            <label class="field">
+                <span>Name</span>
+                <input [(ngModel)]="name" name="name" placeholder="vd: Thư HR" />
+            </label>
+
+            <label class="field">
+                <span>Email</span>
+                <input [(ngModel)]="email" name="email" placeholder="vd: thu.hr@company.com" />
+            </label>
+
+            <label class="field">
+                <span>Role</span>
+                <select [(ngModel)]="role" name="role">
+                    <option value="HR">HR</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+            </label>
+
+            <button class="btn" (click)="createUser()" [disabled]="saving">
+                {{ saving ? 'Đang tạo...' : 'Tạo user' }}
+            </button>
+        </section>
+
+        <!-- Column 2 -->
+        <section class="card">
+            <div class="row">
+                <h2>2) Danh sách người dùng</h2>
+                <button class="btn btn--ghost" (click)="reload()" [disabled]="loading">
+                    {{ loading ? 'Đang tải...' : 'Refresh' }}
+                </button>
+            </div>
+
+            <div class="tableWrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width:70px;">STT</th>
+                            <th>Tên người dùng</th>
+                            <th style="width:220px;">Ngày tạo</th>
+                            <th style="width:200px;">Sửa / Xoá</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr *ngFor="let u of users; let i = index">
+                            <td>{{ i + 1 }}</td>
+
+                            <td>
+                                <ng-container *ngIf="editingId !== u.id; else editTpl">
+                                    <div class="uName">{{ u.name }}</div>
+                                    <div class="uMeta">@{{ u.username }} • {{ u.role }} • {{ u.email }}</div>
+                                </ng-container>
+
+                                <ng-template #editTpl>
+                                    <div class="editBox">
+                                        <input [(ngModel)]="editName" name="editName" placeholder="Name" />
+                                        <input [(ngModel)]="editEmail" name="editEmail" placeholder="Email" />
+                                        <select [(ngModel)]="editRole" name="editRole">
+                                            <option value="HR">HR</option>
+                                            <option value="ADMIN">ADMIN</option>
+                                        </select>
+                                    </div>
+                                </ng-template>
+                            </td>
+
+                            <td>{{ formatDate(u.createdAt) }}</td>
+
+                            <td>
+                                <ng-container *ngIf="editingId !== u.id">
+                                    <button class="btn btn--small" (click)="startEdit(u)">Sửa</button>
+                                    <button class="btn btn--small btn--danger" (click)="deleteUser(u.id)">Xoá</button>
+                                </ng-container>
+
+                                <ng-container *ngIf="editingId === u.id">
+                                    <button class="btn btn--small" (click)="saveEdit(u.id)"
+                                        [disabled]="saving">Lưu</button>
+                                    <button class="btn btn--small btn--ghost" (click)="cancelEdit()">Huỷ</button>
+                                </ng-container>
+                            </td>
+                        </tr>
+
+                        <tr *ngIf="!loading && users.length === 0">
+                            <td colspan="4" class="empty">Chưa có user nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
