@@ -10,6 +10,8 @@ async function saveCvFile(file) {
         mimeType: file.mimetype,
         size: file.size,
         absolutePath: file.path,
+        storedAt: new Date(),
+
     });
 
     return cvFileDoc;
