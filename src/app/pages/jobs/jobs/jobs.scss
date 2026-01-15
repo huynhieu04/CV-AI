@@ -2,53 +2,85 @@
    JOBS PAGE - CLEAN UI
    ========================= */
 
-.page--jobs {
-  .page__header {
-    margin-bottom: 20px;
-  }
+:host {
+  display: block;
+  height: 100%;
 }
 
-/* ---------- Layout ---------- */
+/* ===== PAGE (same as Candidates) ===== */
+.page {
+  padding: 32px 40px 40px;
+  min-height: calc(100vh - 64px);
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.14), transparent 55%);
+}
+
+.page__header {
+  margin-bottom: 20px;
+}
+
+.page__title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #020617;
+}
+
+.page__subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #64748b;
+  max-width: 780px;
+  line-height: 1.6;
+}
+
+.page__subtitle--meta {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* ===== LAYOUT ===== */
 .jobs-layout {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* ---------- Card base ---------- */
-.card {
-  background: #fff;
-  border-radius: 20px;
-  border: 1px solid #edf2ff;
+/* ===== CARD (same as Candidates) ===== */
+.page .card {
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.06),
+    0 0 0 1px rgba(148, 163, 184, 0.08);
+  padding: 20px 24px 24px;
+  background: rgba(255, 255, 255, 0.96);
   overflow: hidden;
 }
 
-.card--shadow {
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
-}
-
 .card__header {
-  padding: 18px 24px 12px;
-  border-bottom: 1px solid #f1f5ff;
-  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .card__title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px;
   color: #0f172a;
 }
 
 .card__sub {
-  margin: 6px 0 0;
-  font-size: 13px;
-  color: #64748b;
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
 }
 
-/* =======================
-   IMPORT BAR (FIX CHOOSE FILE)
-   ======================= */
+/* ===== IMPORT BAR (clean) ===== */
 .importbar {
   display: flex;
   align-items: center;
@@ -56,7 +88,7 @@
   gap: 12px;
 
   padding: 12px 14px;
-  margin: 10px 18px 14px;
+  margin: 10px 0 14px;
 
   border: 1px solid #e5e7eb;
   border-radius: 14px;
@@ -77,7 +109,6 @@
 }
 
 .importbar__file {
-  /* ✅ Quan trọng: ẩn input thật để không hiện "Choose file" */
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -101,15 +132,14 @@
   opacity: 0.65;
 }
 
-/* ---------- Form ---------- */
+/* ===== FORM ===== */
 .jobs-form {
-  padding: 16px 18px 18px;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-/* Section in form */
 .jobs-form__section {
   background: #fafbff;
   border-radius: 16px;
@@ -125,14 +155,12 @@
   letter-spacing: 0.02em;
 }
 
-/* Grid default */
 .jobs-form__grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px 12px;
 }
 
-/* Detail section: 2 columns */
 .jobs-form__grid--2col {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px 14px;
@@ -169,10 +197,6 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.field__input--lg {
-  width: 100%;
-}
-
 .field__input:focus,
 .field__textarea:focus {
   border-color: #2563eb;
@@ -184,44 +208,13 @@
   resize: vertical;
 }
 
-/* Make basic section compact */
-.jobs-form__section--basic {
-  padding: 12px 16px 12px;
-}
-
-.jobs-form__section--basic .jobs-form__section-title {
-  margin-bottom: 8px;
-}
-
-/* Hint text */
 .jobs-form__hint {
   margin: 10px 2px 0;
   font-size: 13px;
   color: #64748b;
 }
 
-/* Desktop: label trái - input phải */
-@media (min-width: 1025px) {
-  .jobs-form__section--basic .jobs-form__field {
-    display: grid;
-    grid-template-columns: 110px 1fr;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .jobs-form__section--basic .field__label {
-    margin: 0;
-    white-space: nowrap;
-    color: #475569;
-    font-weight: 700;
-  }
-
-  .jobs-form__section--basic .field__input--lg {
-    max-width: 560px;
-  }
-}
-
-/* Footer actions */
+/* footer */
 .jobs-form__footer {
   margin-top: 2px;
   display: flex;
@@ -246,7 +239,7 @@
   font-weight: 600;
 }
 
-/* Buttons */
+/* ===== BUTTONS (same vibe as Candidates) ===== */
 .btn {
   border-radius: 999px;
   padding: 8px 16px;
@@ -277,16 +270,16 @@
 }
 
 .btn--primary {
-  background: #1d4ed8;
+  background: radial-gradient(circle at top left, #60a5fa, #2563eb);
   color: #fff;
-  box-shadow: 0 12px 18px rgba(29, 78, 216, 0.18);
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.25);
 }
 
 .btn--primary:hover {
-  box-shadow: 0 14px 22px rgba(29, 78, 216, 0.24);
+  box-shadow: 0 18px 40px rgba(37, 99, 235, 0.32);
 }
 
-/* ---------- Import result box ---------- */
+/* ===== IMPORT RESULT ===== */
 .import-result {
   margin-top: 10px;
   border: 1px solid #e5e7eb;
@@ -321,60 +314,23 @@
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    'Liberation Mono', 'Courier New', monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
-/* ---------- List header chips ---------- */
-.jobs-list__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.jobs-list__chips {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 2px;
-}
-
-.chip {
-  border-radius: 999px;
-  padding: 5px 10px;
-  font-size: 12px;
-  border: 1px solid transparent;
-  display: inline-flex;
-  align-items: center;
-  font-weight: 700;
-}
-
-.chip--primary {
-  background: #e0ebff;
-  border-color: rgba(37, 99, 235, 0.35);
-  color: #1d4ed8;
-}
-
-.chip--soft {
-  background: #f3f4f6;
-  color: #475569;
-  font-weight: 700;
-}
-
-/* ---------- Badge (Level/Type) ---------- */
+/* ===== BADGES ===== */
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+
   background: #e0ebff;
   color: #1d4ed8;
   border: 1px solid rgba(37, 99, 235, 0.25);
-  white-space: nowrap;
 }
 
 .badge--soft {
@@ -387,62 +343,59 @@
   opacity: 0.65;
 }
 
-/* ---------- Table ---------- */
+/* ===== TABLE (same as Candidates) ===== */
 .jobs-table-wrapper {
   width: 100%;
   overflow-x: auto;
 }
 
-.table,
-.table--jd {
+.table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
+  margin-top: 8px;
+  table-layout: fixed;
   min-width: 820px;
 }
 
-.table thead,
-.table--jd thead {
-  background: #f9fafb;
+.table thead {
+  background: #f1f5f9;
 }
 
 .table th,
-.table td,
-.table--jd th,
-.table--jd td {
-  padding: 12px 12px;
-  border-bottom: 1px solid #edf2f7;
+.table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
   vertical-align: middle;
 }
 
-.table th,
-.table--jd th {
-  font-size: 13px;
-  font-weight: 800;
+.table th {
+  font-weight: 700;
   color: #475569;
   text-align: center;
   white-space: nowrap;
+  font-size: 13px;
 }
 
-.table td,
-.table--jd td {
-  color: #0f172a;
+.table tbody tr {
+  transition: background-color 0.12s ease;
 }
 
-.table tbody tr:hover,
-.table--jd tbody tr:hover {
-  background: #f8fafc;
+.table tbody tr:hover {
+  background-color: #f9fafb;
 }
 
 .table__mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    'Liberation Mono', 'Courier New', monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-size: 12.5px;
   color: #334155;
 }
 
 /* column align */
 .col-code,
+.col-level,
+.col-type,
 .col-created,
 .col-actions {
   text-align: center;
@@ -453,36 +406,49 @@
   text-align: left;
 }
 
-/* Actions */
+.col-skills {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* action button (delete) */
 .link-btn {
-  border: none;
-  background: transparent;
-  padding: 6px 8px;
-  font-size: 13px;
-  font-weight: 800;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(254, 226, 226, 0.85);
+  color: #b91c1c;
+
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+
   cursor: pointer;
-  border-radius: 10px;
+  transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.15s ease;
 }
 
-.link-btn--danger {
-  color: #dc2626;
+.link-btn:hover {
+  background: rgba(254, 202, 202, 0.95);
+  box-shadow: 0 10px 22px rgba(239, 68, 68, 0.18);
+  transform: translateY(-1px);
 }
 
-.link-btn--danger:hover {
-  background: rgba(220, 38, 38, 0.08);
+.link-btn:active {
+  transform: translateY(0);
 }
 
-/* ---------- Empty / Loading ---------- */
+/* ===== LOADING / EMPTY (same style) ===== */
 .empty-state {
-  padding: 22px 24px 26px;
-  text-align: left;
+  padding: 20px 8px 18px;
+  text-align: center;
 }
 
 .empty-state--inline {
-  padding: 18px 24px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  padding: 12px 16px;
+  text-align: left;
 }
 
 .empty-state__icon {
@@ -490,25 +456,23 @@
 }
 
 .empty-state__title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 800;
-  color: #0f172a;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 
 .empty-state__text {
-  margin: 4px 0 0;
   font-size: 13px;
-  color: #64748b;
+  color: #6b7280;
 }
 
 .spinner {
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  border: 3px solid rgba(15, 23, 42, 0.12);
-  border-top-color: rgba(37, 99, 235, 0.9);
-  animation: spin 0.9s linear infinite;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #3b82f6;
+  animation: spin 0.6s linear infinite;
 }
 
 @keyframes spin {
@@ -517,9 +481,9 @@
   }
 }
 
-/* ---------- Pagination ---------- */
+/* ===== PAGINATION ===== */
 .jobs-pagination {
-  margin: 10px 18px 16px;
+  margin-top: 12px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -529,36 +493,25 @@
 .jobs-pagination__info {
   font-size: 13px;
   color: #475569;
-  font-weight: 700;
+  font-weight: 600;
 }
 
-/* ---------- Responsive ---------- */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
+  .page {
+    padding: 24px 16px 28px;
+  }
+
+  .page .card {
+    padding: 16px 16px 18px;
+  }
+
   .jobs-form__grid--2col {
     grid-template-columns: 1fr;
   }
 
-  .table,
-  .table--jd {
+  .table {
     min-width: 720px;
-  }
-
-  .importbar {
-    margin: 10px 14px 14px;
-  }
-}
-
-@media (max-width: 520px) {
-  .card__header {
-    padding: 16px 16px 10px;
-  }
-
-  .jobs-form {
-    padding: 14px 14px 16px;
-  }
-
-  .jobs-pagination {
-    margin: 10px 14px 14px;
   }
 
   .importbar__filename {

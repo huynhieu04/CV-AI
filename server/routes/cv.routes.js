@@ -39,7 +39,7 @@ const storage = multer.diskStorage({
  * ======================================================
  * 3) HELPER: DELETE UPLOADED FILE WHEN REJECTED
  * ======================================================
- * ✅ Nếu file đã lưu mà bị chặn ở middleware sau đó,
+ *  Nếu file đã lưu mà bị chặn ở middleware sau đó,
  *    mình xóa để không rác thư mục uploads/cv.
  */
 function removeUploadedFile(req) {
@@ -56,7 +56,7 @@ function removeUploadedFile(req) {
  * ======================================================
  * 4) HELPER: EXTENSION + MIME VALIDATION
  * ======================================================
- * ✅ Mục tiêu: "file lạ" -> báo lỗi
+ *  Mục tiêu: "file lạ" -> báo lỗi
  *
  * Vì người dùng có thể đổi tên file .pdf nhưng thực chất là file khác,
  * nên phải check BOTH:
@@ -86,8 +86,8 @@ function isValidMimeByExt(ext, mimetype) {
  * ======================================================
  * 5) MULTER INSTANCE (LIMIT FILE SIZE)
  * ======================================================
- * ✅ Chỉ giới hạn dung lượng.
- * ⚠️ Check định dạng mình làm ở middleware checkFileAllowed bên dưới
+ * Chỉ giới hạn dung lượng.
+ *  Check định dạng mình làm ở middleware checkFileAllowed bên dưới
  */
 const upload = multer({
     storage,

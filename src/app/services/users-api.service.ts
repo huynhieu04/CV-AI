@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export type Role = 'HR' | 'ADMIN';
 
 export interface AppUser {
-    id: string;          // ✅ FE dùng id
+    id: string;
     username: string;
     name: string;
     email: string;
@@ -13,11 +14,12 @@ export interface AppUser {
     createdAt: string;
 }
 
-const API_BASE = 'http://localhost:5000/api';
+// ✅ dùng apiBaseUrl giống các service khác của bạn
+const API_BASE = environment.apiBaseUrl;
 
 function toAppUser(u: any): AppUser {
     return {
-        id: u.id || u._id,                 // ✅ map _id -> id
+        id: u.id || u._id,
         username: u.username,
         name: u.name,
         email: u.email,
@@ -33,7 +35,7 @@ export class UsersApiService {
     list(): Observable<AppUser[]> {
         return this.http
             .get<any>(`${API_BASE}/users`, {
-                params: { _ts: Date.now() }, // cache buster
+                params: { _ts: Date.now() },
                 headers: new HttpHeaders({
                     'Cache-Control': 'no-cache',
                     Pragma: 'no-cache',
@@ -55,6 +57,8 @@ export class UsersApiService {
     }
 
     delete(id: string): Observable<void> {
-        return this.http.delete<any>(`${API_BASE}/users/${id}`).pipe(map(() => void 0));
+        return this.http
+            .delete<any>(`${API_BASE}/users/${id}`)
+            .pipe(map(() => void 0));
     }
 }

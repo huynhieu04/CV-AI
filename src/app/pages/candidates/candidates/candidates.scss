@@ -268,3 +268,42 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* ===== Actions column (Delete button) ===== */
+.table__th--action,
+.table__td--action {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Nút xoá nhỏ, gọn */
+.btn-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+
+    border-radius: 999px;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(254, 226, 226, 0.85);
+    /* #fee2e2 */
+    color: #b91c1c;
+
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.15s ease;
+}
+
+.btn-delete:hover {
+    background: rgba(254, 202, 202, 0.95);
+    /* #fecaca */
+    box-shadow: 0 10px 22px rgba(239, 68, 68, 0.18);
+    transform: translateY(-1px);
+}
+
+.btn-delete:active {
+    transform: translateY(0);
+}

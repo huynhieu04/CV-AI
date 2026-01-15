@@ -1,34 +1,47 @@
-<div class="settings-page">
-    <h1 class="page-title">Cấu Hình</h1>
-    <p class="page-subtitle">
-        Cấu hình trọng số AI và định dạng CV mà hệ thống hỗ trợ. Các giá trị này
-        được lưu trên backend trong MongoDB.
-    </p>
+<div class="page page--settings">
+    <header class="page__header">
+        <div>
+            <h1 class="page__title">Cấu Hình</h1>
+            <p class="page__subtitle">
+                Cấu hình trọng số AI và định dạng CV mà hệ thống hỗ trợ. Các giá trị này được lưu trên backend trong
+                MongoDB.
+            </p>
+            <p class="page__subtitle page__subtitle--meta">
+                API: <span class="mono">/api/settings</span>
+            </p>
+        </div>
+    </header>
 
-    <div *ngIf="isLoading" class="card loading-card">
-        <p>Đang tải cấu hình từ API <code>/api/settings</code>...</p>
-        <div class="spinner"></div>
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="card">
+        <div class="empty-state empty-state--inline">
+            <div class="spinner"></div>
+            <p class="empty-state__text">Đang tải cấu hình từ API <span class="mono">/api/settings</span>...</p>
+        </div>
     </div>
 
     <ng-container *ngIf="!isLoading">
-        <div *ngIf="errorMessage" class="alert alert-error">
+        <!-- Alerts -->
+        <div *ngIf="errorMessage" class="alert alert--error">
             {{ errorMessage }}
         </div>
 
-        <div *ngIf="successMessage" class="alert alert-success">
+        <div *ngIf="successMessage" class="alert alert--success">
             {{ successMessage }}
         </div>
 
-        <!-- Card: Trọng số tiêu chí -->
+        <!-- Card: Weights -->
         <section class="card">
-            <h2 class="card-title">Trọng số tiêu chí</h2>
-            <p class="card-subtitle">
-                Điều chỉnh tầm quan trọng của từng nhóm tiêu chí khi tính điểm phù hợp.
-            </p>
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Trọng số tiêu chí</h2>
+                    <p class="card__sub">Điều chỉnh tầm quan trọng của từng nhóm tiêu chí khi tính điểm phù hợp.</p>
+                </div>
+            </div>
 
             <div class="weights-grid">
                 <div class="field">
-                    <label>Kỹ năng (skills)</label>
+                    <label class="field__label">Kỹ năng (skills)</label>
                     <div class="input-suffix">
                         <input type="number" min="0" max="100" step="10" [(ngModel)]="settings.weights.skills"
                             (ngModelChange)="onWeightsChanged('skills')" />
@@ -38,7 +51,7 @@
                 </div>
 
                 <div class="field">
-                    <label>Kinh nghiệm (experience)</label>
+                    <label class="field__label">Kinh nghiệm (experience)</label>
                     <div class="input-suffix">
                         <input type="number" min="0" max="100" step="10" [(ngModel)]="settings.weights.experience"
                             (ngModelChange)="onWeightsChanged('experience')" />
@@ -48,7 +61,7 @@
                 </div>
 
                 <div class="field">
-                    <label>Học vấn (education)</label>
+                    <label class="field__label">Học vấn (education)</label>
                     <div class="input-suffix">
                         <input type="number" min="0" max="100" step="10" [(ngModel)]="settings.weights.education"
                             (ngModelChange)="onWeightsChanged('education')" />
@@ -58,7 +71,7 @@
                 </div>
 
                 <div class="field">
-                    <label>Ngôn ngữ (languages)</label>
+                    <label class="field__label">Ngôn ngữ (languages)</label>
                     <div class="input-suffix">
                         <input type="number" min="0" max="100" step="10" [(ngModel)]="settings.weights.languages"
                             (ngModelChange)="onWeightsChanged('languages')" />
@@ -76,12 +89,14 @@
             </div>
         </section>
 
-        <!-- Card: Định dạng CV -->
+        <!-- Card: Formats -->
         <section class="card">
-            <h2 class="card-title">Định dạng CV được phép</h2>
-            <p class="card-subtitle">
-                Các setting này quyết định backend cho phép upload loại file nào.
-            </p>
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Định dạng CV được phép</h2>
+                    <p class="card__sub">Các setting này quyết định backend cho phép upload loại file nào.</p>
+                </div>
+            </div>
 
             <div class="formats">
                 <label class="checkbox">
@@ -101,8 +116,9 @@
             </div>
         </section>
 
-        <div class="actions">
-            <button class="btn-primary" (click)="onSave()" [disabled]="isSaving || totalWeight !== 100">
+        <!-- Actions -->
+        <div class="settings-actions">
+            <button class="btn btn--primary" (click)="onSave()" [disabled]="isSaving || totalWeight !== 100">
                 <span *ngIf="!isSaving">Lưu cấu hình</span>
                 <span *ngIf="isSaving">Đang lưu...</span>
             </button>

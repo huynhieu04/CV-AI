@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export type Role = 'HR' | 'ADMIN';
 
@@ -22,7 +23,9 @@ interface LoginResponse {
 export class AuthService {
   private TOKEN_KEY = 'cv_ai_token';
   private USER_KEY = 'cv_ai_user';
-  private API = 'http://localhost:5000/api/auth';
+
+  // ✅ dùng env (dev/prod)
+  private API = `${environment.apiBaseUrl}/auth`;
 
   constructor(private http: HttpClient) { }
 

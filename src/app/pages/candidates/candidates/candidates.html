@@ -45,7 +45,7 @@
                             <th style="width:140px">Mức Độ Phù Hợp</th>
                             <th style="width:140px">Trạng Thái</th>
                             <th style="width:170px">Được Tạo Vào</th>
-                            <th class="table__th--right" style="width:90px">Xoá</th>
+                            <th class="table__th--action" style="width:90px">Xoá</th>
                         </tr>
                     </thead>
 
@@ -94,10 +94,10 @@
                             <td>{{ c.createdAt | date: 'dd/MM/yyyy, HH:mm' }}</td>
 
                             <!-- Delete -->
-                            <td class="table__td--right">
-                                <button type="button" class="btn-icon btn-icon--danger" title="Xoá hồ sơ"
+                            <td class="table__td--action">
+                                <button type="button" class="btn-delete" title="Xoá hồ sơ"
                                     (click)="onDeleteCandidate(c.candidateId, $event)">
-                                    Xoá hồ sơ
+                                    Xoá
                                 </button>
                             </td>
                         </tr>

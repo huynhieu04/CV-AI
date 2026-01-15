@@ -2,7 +2,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { environment } from '../../environments/environments';
+import { environment } from '../../environments/environment';
+
 
 // ✅ Lấy base URL theo environment (dev/prod)
 const API_BASE = environment.apiBaseUrl;
