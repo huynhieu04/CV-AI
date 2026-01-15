@@ -80,48 +80,13 @@ export class CandidatesComponent implements OnInit, OnDestroy {
       next: (list: any) => {
         const arr: any[] = Array.isArray(list) ? list : [];
 
-        this.rows = arr.map((c, idx) => {
-          const matchResult = c.matchResult || {};
-          const matches: any[] = Array.isArray(matchResult.matches)
-            ? matchResult.matches
-            : [];
-
-          let best: any | null = null;
-
-          if (matches.length) {
-            if (matchResult.bestJobId) {
-              best =
-                matches.find(
-                  (m) => String(m.jobId) === String(matchResult.bestJobId)
-                ) ?? matches[0];
-            } else {
-              best = [...matches].sort(
-                (a, b) => (b.score ?? 0) - (a.score ?? 0)
-              )[0];
-            }
-          }
-
-          const score = best?.score ?? 0;
-          const label = best?.label || '';
-
-          return {
-            stt: idx + 1, // ✅ STT thật
-            candidateId: c._id,
-            name: c.fullName || c.name || 'Candidate from CV',
-            email: c.email || 'candidate@example.com',
-            bestJobId: best?.jobId ?? null,
-            bestJob: best ? `${best.jobTitle} (${best.jobCode})` : 'Chưa có gợi ý',
-            matchScore: score,
-            status: this.mapStatus(label, score),
-            createdAt: c.createdAt,
-          };
-        });
+        this.rows = arr
+          .map((c, idx) => this.mapCandidateRow(c, idx))
+          // ✅ lọc bỏ những record lỗi id để khỏi bấm xoá ra undefined
+          .filter((r) => !!r.candidateId);
 
         this.isLoading = false;
-
-        // ✅ apply theo keyword hiện tại trên header (nếu đang có)
         this.applyFilter();
-
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -132,6 +97,70 @@ export class CandidatesComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  /**
+   * Map 1 item từ API -> CandidateRow
+   * Hỗ trợ 2 kiểu response:
+   * - Kiểu mới (BE tối ưu): { candidateId, stt, fullName, bestJob, bestJobId, matchScore, status, createdAt }
+   * - Kiểu cũ: { _id, fullName, email, matchResult{...}, createdAt }
+   */
+  private mapCandidateRow(c: any, idx: number): CandidateRow {
+    // ✅ Ưu tiên candidateId kiểu mới, fallback _id/id
+    const candidateId = String(c?.candidateId || c?._id || c?.id || '');
+
+    // ✅ Nếu BE mới đã trả sẵn bestJob/matchScore/status thì dùng luôn
+    const hasOptimizedFields =
+      c && (c.bestJob !== undefined || c.matchScore !== undefined || c.status !== undefined);
+
+    if (hasOptimizedFields) {
+      const score = Number(c.matchScore ?? 0);
+
+      return {
+        stt: Number(c.stt ?? idx + 1),
+        candidateId,
+        name: c.fullName || c.name || 'Candidate from CV',
+        email: c.email || 'candidate@example.com',
+
+        bestJobId: c.bestJobId ?? null,
+        bestJob: c.bestJob || 'Chưa có gợi ý',
+
+        matchScore: score,
+        status: (c.status as CandidateStatus) || this.mapStatus('', score),
+        createdAt: c.createdAt,
+      };
+    }
+
+    // ✅ Fallback theo kiểu cũ (tự pick best match từ matchResult)
+    const matchResult = c?.matchResult || {};
+    const matches: any[] = Array.isArray(matchResult.matches) ? matchResult.matches : [];
+
+    let best: any | null = null;
+
+    if (matches.length) {
+      if (matchResult.bestJobId) {
+        best =
+          matches.find((m) => String(m.jobId) === String(matchResult.bestJobId)) ??
+          matches[0];
+      } else {
+        best = [...matches].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
+      }
+    }
+
+    const score = Number(best?.score ?? 0);
+    const label = String(best?.label || '');
+
+    return {
+      stt: idx + 1,
+      candidateId,
+      name: c.fullName || c.name || 'Candidate from CV',
+      email: c.email || 'candidate@example.com',
+      bestJobId: best?.jobId ?? null,
+      bestJob: best ? `${best.jobTitle} (${best.jobCode})` : 'Chưa có gợi ý',
+      matchScore: score,
+      status: this.mapStatus(label, score),
+      createdAt: c.createdAt,
+    };
   }
 
   private applyFilter() {
@@ -148,19 +177,15 @@ export class CandidatesComponent implements OnInit, OnDestroy {
       const created = this.formatDateForSearch(c.createdAt);
 
       return (
-        // ✅ STT: gõ "1" sẽ ra STT 1,10,11...
         String(c.stt).includes(q) ||
-
-        c.candidateId.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
-        c.name.toLowerCase().includes(q) ||
-        c.bestJob.toLowerCase().includes(q) ||
+        (c.candidateId || '').toLowerCase().includes(q) ||
+        (c.email || '').toLowerCase().includes(q) ||
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.bestJob || '').toLowerCase().includes(q) ||
         String(c.bestJobId || '').toLowerCase().includes(q) ||
         String(c.matchScore ?? '').includes(q) ||
         String(c.status || '').toLowerCase().includes(q) ||
         statusVi.includes(q) ||
-
-        // ✅ gõ "18/12" sẽ match dd/MM/yyyy
         created.includes(q)
       );
     });
@@ -197,23 +222,28 @@ export class CandidatesComponent implements OnInit, OnDestroy {
   }
 
   onDeleteCandidate(candidateId: string, ev?: MouseEvent) {
-    ev?.stopPropagation(); // ✅ không trigger click row/link
+    ev?.stopPropagation();
+
+    // ✅ chặn lỗi /undefined
+    if (!candidateId) {
+      this.errorMessage = 'Thiếu candidateId. Kiểm tra API /candidates có trả candidateId/_id không.';
+      this.cdr.markForCheck();
+      return;
+    }
 
     const ok = window.confirm('Bạn chắc chắn muốn xoá hồ sơ này? Hành động này không thể hoàn tác.');
     if (!ok) return;
 
     this.cvApi.deleteCandidate(candidateId).subscribe({
       next: () => {
-        // ✅ xoá khỏi rows và filteredRows luôn (nhanh, không cần reload)
-        this.rows = this.rows.filter(r => r.candidateId !== candidateId);
+        this.rows = this.rows.filter((r) => r.candidateId !== candidateId);
         this.applyFilter();
         this.cdr.markForCheck();
       },
       error: (err) => {
         this.errorMessage = err?.error?.message || 'Xoá candidate thất bại.';
         this.cdr.markForCheck();
-      }
+      },
     });
   }
-
 }
