@@ -45,7 +45,7 @@ const candidateSchema = new mongoose.Schema(
 
         cvFile: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "CvFile", // ✅ đúng tên model
+            ref: "CVFile", // ✅ đúng tên model
         },
 
 
