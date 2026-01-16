@@ -174,6 +174,6 @@ async function checkFileAllowed(req, res, next) {
  * - checkFileAllowed       -> chặn file lạ, sai định dạng, sai MIME
  * - cvController.uploadCv  -> parse CV + match AI
  */
-router.post("/upload", upload.single("file"), checkFileAllowed, cvController.uploadCv);
+router.post("/upload", upload.single("file"), checkFileAllowed, cvController.uploadAndMatchCv);
 
 module.exports = router;
