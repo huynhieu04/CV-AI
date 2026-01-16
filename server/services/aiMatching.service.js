@@ -198,8 +198,6 @@ function estimateYearsOfExperienceFromMonths(months) {
  */
 function deriveSeniorityHint(signals, months) {
   if (signals.hasLeaderKeywords) return "Lead";
-  if (signals.isIntern || signals.isStudent) return "Intern";
-  if (signals.isFresher) return "Fresher";
 
   if (typeof months === "number") {
     if (months <= 6) return "Intern";
@@ -210,11 +208,13 @@ function deriveSeniorityHint(signals, months) {
     return "Lead";
   }
 
+  if (signals.isFresher) return "Fresher";
+  if (signals.isIntern || signals.isStudent) return "Intern";
   if (signals.hasSeniorKeywords) return "Senior";
   if (signals.hasJuniorKeywords) return "Junior";
-
   return "Unknown";
 }
+
 
 function buildStructuredCvText(cvData) {
   const parts = [

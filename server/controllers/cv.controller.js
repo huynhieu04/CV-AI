@@ -31,10 +31,10 @@ exports.uploadCv = async (req, res) => {
         const cvFileDoc = await saveCvFile(req.file);
 
         // 2) parse + upsert candidate
-        const { text, candidate } = await parseCvFromPath(req.file.path, cvFileDoc._id);
+        const { text, rawText, candidate } = await parseCvFromPath(cvFileDoc.absolutePath, cvFileDoc._id);
 
         // 3) match AI + save candidate.matchResult
-        let matchResult = null;
+        matchResult = await matchCandidateToJobs(candidate, rawText || text, cvFileDoc._id);
 
         try {
             matchResult = await matchCandidateToJobs(candidate, text, cvFileDoc._id);
