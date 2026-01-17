@@ -21,23 +21,49 @@ function normalizeText(s) {
 function detectSignals(rawText) {
   const t = String(rawText || "").toLowerCase();
 
-  const isStudent = /\bstudent\b|sinh viên|đang học|undergraduate/.test(t);
-  const isIntern = /\bintern(ship)?\b|thực tập|tt\b/.test(t);
+  // Base flags
+  const isStudent = /\bstudent\b|sinh viên|đang học|undergraduate|đại học|university|college/.test(t);
+  const isIntern = /\bintern(ship)?\b|thực tập|\btt\b/.test(t);
   const isFresher = /\bfresher\b|mới tốt nghiệp|new graduate|fresh graduate/.test(t);
 
-  const hasLeaderKeywords =
-    /\b(team lead|leader|lead|manager|supervisor|head of|tech lead|project lead)\b|trưởng nhóm|quản lý|trưởng bộ phận/.test(
+  // Context: school/club vs company/work
+  const hasStudentContext =
+    /clb|câu lạc bộ|đoàn|hội|tân sinh viên|khoa|trường|campus|student organization|đội tình nguyện|văn phòng khoa/.test(
       t
     );
 
+  const hasWorkContext =
+    /company|công ty|doanh nghiệp|khách hàng|client|kpi|doanh thu|revenue|full[-\s]?time|part[-\s]?time|nhân viên|phòng ban|báo cáo cho|report to|stakeholder/.test(
+      t
+    );
+
+  // Leadership keywords (soft + hard)
+  const hasLeaderKeywords =
+    /\b(team lead|leader|lead|manager|supervisor|head of|tech lead|project lead)\b|trưởng nhóm|quản lý|trưởng bộ phận|giám sát/.test(
+      t
+    );
+
+  const hasManagerKeywords =
+    /\b(manager|head of|supervisor)\b|trưởng bộ phận|quản lý|giám sát/.test(t);
+
   const hasSeniorKeywords = /\bsenior\b|\bsr\b|sr\./.test(t);
   const hasJuniorKeywords = /\bjunior\b|\bjr\b|jr\./.test(t);
+
+  // Leader appears mainly in school context -> treat as potential (avoid over-level)
+  const leaderStudentContext = hasLeaderKeywords && hasStudentContext && !hasWorkContext;
 
   return {
     isStudent,
     isIntern,
     isFresher,
+
+    hasStudentContext,
+    hasWorkContext,
+
     hasLeaderKeywords,
+    hasManagerKeywords,
+    leaderStudentContext,
+
     hasSeniorKeywords,
     hasJuniorKeywords,
   };
@@ -100,19 +126,12 @@ function toIndex(ym) {
   return ym.y * 12 + (ym.m - 1);
 }
 
-function diffMonths(a, b) {
-  if (!a || !b) return 0;
-  const start = toIndex(a);
-  const end = toIndex(b);
-  return Math.max(0, end - start + 1);
-}
-
 // Merge ranges để không double-count
 function mergeRanges(ranges) {
   if (!ranges.length) return [];
   const sorted = ranges
-    .map(r => ({ s: toIndex(r.from), e: toIndex(r.to) }))
-    .filter(r => r.e >= r.s)
+    .map((r) => ({ s: toIndex(r.from), e: toIndex(r.to) }))
+    .filter((r) => r.e >= r.s)
     .sort((a, b) => a.s - b.s);
 
   const merged = [sorted[0]];
@@ -148,9 +167,7 @@ function estimateExperienceMonthsFromText(text) {
 
   if (ranges.length) {
     const merged = mergeRanges(ranges);
-    for (const r of merged) {
-      months += (r.e - r.s + 1);
-    }
+    for (const r of merged) months += r.e - r.s + 1;
   } else {
     // fallback "x years" patterns
     const yrRange = lower.match(/(\d+)\s*[-]\s*(\d+)\s*(years?|năm)/);
@@ -189,37 +206,97 @@ function estimateYearsOfExperienceFromMonths(months) {
 }
 
 /**
- * Seniority hint:
- * - Lead keyword mạnh nhất
- * - Intern/Student => Intern
- * - Fresher => Fresher
- * - months => thresholds
- * - keyword fallback
+ * Seniority hint (HR-safe):
+ * - Student/Intern có ưu tiên cao (chặn over Senior/Lead)
+ * - Leader trong trường -> chỉ coi là potential (không auto Lead)
+ * - months là nguồn ổn định nhất
  */
 function deriveSeniorityHint(signals, months) {
-  if (signals.hasLeaderKeywords) return "Lead";
+  const m = typeof months === "number" ? months : null;
 
-  if (typeof months === "number") {
-    if (months <= 6) return "Intern";
-    if (months <= 12) return "Fresher";
-    if (months <= 24) return "Junior";
-    if (months <= 48) return "Mid";
-    if (months <= 72) return "Senior";
+  // 1) Intern
+  if (signals.isIntern) {
+    if (m !== null) {
+      if (m <= 6) return "Intern";
+      if (m <= 12) return "Fresher";
+      if (m <= 24) return "Junior";
+      return "Mid";
+    }
+    return "Intern";
+  }
+
+  // 2) Student (không auto Intern nữa, để Fresher an toàn hơn)
+  if (signals.isStudent) {
+    if (m !== null) {
+      if (m <= 12) return "Fresher";
+      if (m <= 24) return "Junior";
+      if (m <= 48) return "Mid";
+      if (m <= 72) return "Senior";
+      return "Lead";
+    }
+    return signals.isFresher ? "Fresher" : "Fresher";
+  }
+
+  // 3) Leader keywords (phân biệt school vs work)
+  if (signals.hasLeaderKeywords) {
+    // Lead trong CLB/trường: không cho Lead, max Mid (hoặc Senior nếu months thật sự đủ)
+    if (signals.leaderStudentContext) {
+      if (m !== null) {
+        if (m <= 24) return "Junior";
+        if (m <= 48) return "Mid";
+        return "Senior";
+      }
+      return "Mid";
+    }
+
+    // Lead trong work context: cần months đủ để lên Senior/Lead
+    if (m !== null) {
+      if (m >= 72) return "Lead";   // >= 6 năm
+      if (m >= 48) return "Senior"; // 4-6 năm
+      if (m >= 24) return "Mid";    // 2-4 năm
+      return "Junior";              // <2 năm mà lead -> thường lead dự án nhỏ
+    }
+
+    if (signals.hasWorkContext && signals.hasManagerKeywords) return "Senior";
+    return "Mid";
+  }
+
+  // 4) months thresholds (ổn định)
+  if (m !== null) {
+    if (m <= 12) return "Fresher";
+    if (m <= 24) return "Junior";
+    if (m <= 48) return "Mid";
+    if (m <= 72) return "Senior";
     return "Lead";
   }
 
+  // 5) keyword fallback
   if (signals.isFresher) return "Fresher";
-  if (signals.isIntern || signals.isStudent) return "Intern";
   if (signals.hasSeniorKeywords) return "Senior";
   if (signals.hasJuniorKeywords) return "Junior";
   return "Unknown";
 }
 
+function calcSeniorityConfidence(months, signals) {
+  const m = typeof months === "number" ? months : null;
+
+  // Student/intern detect khá chắc, nhưng level chỉ là ước lượng -> Medium
+  if (signals.isIntern || signals.isStudent) return "Medium";
+
+  if (m !== null) {
+    if (m >= 36) return "High";
+    if (m >= 12) return "Medium";
+    return "Low";
+  }
+
+  if (signals.hasWorkContext) return "Medium";
+  return "Low";
+}
 
 function buildStructuredCvText(cvData) {
   const parts = [
     `CANDIDATE: ${cvData.name || ""} | ${cvData.email || ""} | ${cvData.phone || ""}`,
-    `SENIORITY_HINT: ${cvData.seniorityHint || "Unknown"} | YEARS: ${cvData.yearsOfExperience ?? "N/A"} | MONTHS: ${cvData.monthsOfExperience ?? "N/A"}`,
+    `SENIORITY_HINT: ${cvData.seniorityHint || "Unknown"} | CONFIDENCE: ${cvData.seniorityConfidence || "N/A"} | YEARS: ${cvData.yearsOfExperience ?? "N/A"} | MONTHS: ${cvData.monthsOfExperience ?? "N/A"}`,
     `SIGNALS: ${JSON.stringify(cvData.signals || {})}`,
     "",
     `SKILLS: ${cvData.skillsText || ""}`,
@@ -254,6 +331,13 @@ XÁC ĐỊNH SENIORITY:
 - Ưu tiên dùng cv.seniorityHint nếu nó không phải Unknown.
 - Nếu cv.seniorityHint = Unknown, suy ra từ CV (experience/skills) và dữ liệu timeline.
 
+RÀNG BUỘC CHỐNG OVER-LEVEL:
+- Nếu signals.isStudent = true hoặc signals.isIntern = true thì candidateSummary.seniority KHÔNG được là Senior/Lead,
+  trừ khi monthsOfExperience >= 48.
+- Nếu signals.leaderStudentContext = true (lead trong CLB/trường) thì tối đa candidateSummary.seniority = Mid
+  (hoặc Senior nếu monthsOfExperience >= 48).
+- "Lead" chỉ dùng khi có bằng chứng quản lý trong môi trường doanh nghiệp + kinh nghiệm đủ (ưu tiên months).
+
 CHẤM ĐIỂM:
 - skills: mức khớp kỹ năng chính
 - experience: mức khớp kinh nghiệm / dự án
@@ -280,7 +364,8 @@ TRẢ JSON:
   "candidateSummary": {
     "mainSkills": ["string"],
     "mainDomains": ["string"],
-    "seniority": "Intern|Fresher|Junior|Mid|Senior|Lead|Unknown"
+    "seniority": "Intern|Fresher|Junior|Mid|Senior|Lead|Unknown",
+    "confidence": "Low|Medium|High"
   },
   "matches": [
     {
@@ -298,7 +383,8 @@ TRẢ JSON:
       }
     }
   ],
-  "bestJobId": "id phù hợp nhất hoặc null"
+  "bestJobId": "id phù hợp nhất hoặc null",
+  "disclaimer": "string"
 }
 `.trim();
 }
@@ -312,6 +398,7 @@ function buildPayload(cvData, jobs) {
       email: cvData.email,
       phone: cvData.phone,
       seniorityHint: cvData.seniorityHint,
+      seniorityConfidence: cvData.seniorityConfidence,
       yearsOfExperience: cvData.yearsOfExperience,
       monthsOfExperience: cvData.monthsOfExperience,
       signals: cvData.signals,
@@ -400,6 +487,11 @@ function enforceSeniority(result, cvData) {
     result.candidateSummary.seniority = cvData.seniorityHint;
   }
 
+  // confidence (if model didn't return it)
+  if (!result.candidateSummary.confidence && cvData?.seniorityConfidence) {
+    result.candidateSummary.confidence = cvData.seniorityConfidence;
+  }
+
   return result;
 }
 
@@ -461,6 +553,12 @@ function normalizeAndEnforceResult(result, cvData, jobs) {
 
   if (!result.bestJobId) result.bestJobId = matches[0]?.jobId || null;
 
+  // default disclaimer (if model didn't return)
+  if (!result.disclaimer) {
+    result.disclaimer =
+      "Kết quả AI hỗ trợ sàng lọc ban đầu dựa trên nội dung CV; không thay thế đánh giá nhân sự trực tiếp (phỏng vấn và thử việc).";
+  }
+
   result.matches = matches.map((m) => {
     const { _jobLevel, _unmapped, ...clean } = m;
     return clean;
@@ -490,9 +588,12 @@ async function matchCvWithJobsGemini(cvData, jobs) {
           mainSkills: [],
           mainDomains: [],
           seniority: cvData.seniorityHint || "Unknown",
+          confidence: cvData.seniorityConfidence || "Low",
         },
         matches: [],
         bestJobId: null,
+        disclaimer:
+          "Kết quả AI hỗ trợ sàng lọc ban đầu dựa trên nội dung CV; không thay thế đánh giá nhân sự trực tiếp (phỏng vấn và thử việc).",
         _parseError: String(e?.message || e),
         _raw: raw?.slice?.(0, 2000),
       };
@@ -551,6 +652,7 @@ async function matchCandidateToJobs(candidate, rawText, cvFileId) {
   const months = estimateExperienceMonthsFromText(expTextForEstimate || raw);
   const years = estimateYearsOfExperienceFromMonths(months);
   const seniorityHint = deriveSeniorityHint(signals, months);
+  const seniorityConfidence = calcSeniorityConfidence(months, signals);
 
   const cvData = {
     name: candidate.fullName || "",
@@ -559,7 +661,10 @@ async function matchCandidateToJobs(candidate, rawText, cvFileId) {
 
     skillsText: Array.isArray(candidate.skills) ? candidate.skills.join(", ") : "",
     experienceText: candidate.experienceText || "",
-    educationText: candidate.education || "",
+
+    // ✅ FIX: extractor trả educationText, không phải education
+    educationText: candidate.educationText || candidate.education || "",
+
     languagesText: Array.isArray(candidate.languages) ? candidate.languages.join(", ") : "",
 
     rawText: raw,
@@ -568,6 +673,7 @@ async function matchCandidateToJobs(candidate, rawText, cvFileId) {
     yearsOfExperience: years,
     signals,
     seniorityHint,
+    seniorityConfidence,
   };
 
   const jobs = await Job.find({ isActive: true }).lean();
