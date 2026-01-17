@@ -481,19 +481,38 @@ function enforceSeniority(result, cvData) {
   const allowed = new Set(["Intern", "Fresher", "Junior", "Mid", "Senior", "Lead", "Unknown"]);
   const s = result.candidateSummary.seniority;
 
+  // 1) sanitize enum
   if (!allowed.has(s)) result.candidateSummary.seniority = "Unknown";
 
+  // 2) nếu model Unknown thì dùng hint backend
   if (result.candidateSummary.seniority === "Unknown" && cvData?.seniorityHint) {
     result.candidateSummary.seniority = cvData.seniorityHint;
   }
 
-  // confidence (if model didn't return it)
+  // 3) confidence (nếu model không trả)
   if (!result.candidateSummary.confidence && cvData?.seniorityConfidence) {
     result.candidateSummary.confidence = cvData.seniorityConfidence;
   }
 
+  // 4) ✅ HARD RULE chống "Lead bậy" cho student/intern
+  // - student/intern: KHÔNG được Lead (trừ khi months >= 48)
+  const sig = cvData?.signals || {};
+  const months = cvData?.monthsOfExperience;
+
+  if ((sig.isStudent || sig.isIntern) && result.candidateSummary.seniority === "Lead") {
+    const ok = typeof months === "number" && months >= 48;
+    if (!ok) result.candidateSummary.seniority = "Mid"; // hoặc "Senior" tùy bạn
+  }
+
+  // 5) ✅ nếu leaderStudentContext (CLB/trường) thì cap max Mid (trừ khi months >= 48)
+  if (sig.leaderStudentContext && result.candidateSummary.seniority === "Lead") {
+    const ok = typeof months === "number" && months >= 48;
+    if (!ok) result.candidateSummary.seniority = "Mid";
+  }
+
   return result;
 }
+
 
 function fillJobFields(matches, jobsById, jobsByCode) {
   return (matches || []).map((m) => {
