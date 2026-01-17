@@ -664,3 +664,15 @@
     word-break: break-word;
     overflow-wrap: anywhere;
 }
+
+.tag-pill {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.35;
+}
+
+.match-card__tags {
+    max-width: 100%;
+}

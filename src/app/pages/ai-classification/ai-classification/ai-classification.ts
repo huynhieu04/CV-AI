@@ -140,24 +140,34 @@ export class AiClassificationComponent implements OnInit {
 
     const name = res?.candidate?.email || res?.candidate?.fullName || 'Ứng viên đã upload';
 
-    const rows: CandidateRow[] = filtered.map((m) => ({
-      name,
-      recommendedJob: `${m.jobTitle} (${m.jobCode})`,
-      matchScore: m.score ?? 0,
-      status: this.mapStatus(m.label, m.score),
-      tags: this.buildTags(summary),
-    }));
+    const rows: CandidateRow[] = filtered.map((m) => {
+      const score = m.score ?? 0;
+      const status = this.mapStatus(m.label, score);
+
+      return {
+        name,
+        recommendedJob: `${m.jobTitle} (${m.jobCode})`,
+        matchScore: score,
+        status,
+        tags: this.buildTags(summary, status, score),
+      };
+    });
+
 
     return { rows, summary, firstRow: rows[0], error: null };
   }
 
-  private buildTags(summary: AiMatchSummary): string[] {
+  private buildTags(summary: AiMatchSummary, status: CandidateStatus, score: number): string[] {
+    const safeSeniority = this.displaySeniority(summary.seniority || '', status, score);
+
     return [
       ...(summary.mainSkills?.length ? [`Kỹ năng: ${summary.mainSkills.slice(0, 3).join(', ')}`] : []),
       ...(summary.mainDomains?.length ? [`Lĩnh vực: ${summary.mainDomains.join(', ')}`] : []),
-      `Cấp độ: ${this.seniorityLabel(summary.seniority || '')}`,
+      `Cấp độ: ${this.seniorityLabel(safeSeniority)}`,
     ];
   }
+
+
 
   private loadAiResultFromDb(candidateId: string) {
     this.isLoadingFromDb = true;
@@ -190,13 +200,18 @@ export class AiClassificationComponent implements OnInit {
         const rows: CandidateRow[] = mr.matches
           .slice()
           .sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0))
-          .map((m: any) => ({
-            name: candidate.email || candidate.fullName || 'Ứng viên',
-            recommendedJob: `${m.jobTitle} (${m.jobCode})`,
-            matchScore: m.score ?? 0,
-            status: this.mapStatus(m.label, m.score),
-            tags: this.buildTags(summary),
-          }));
+          .map((m: any) => {
+            const score = m.score ?? 0;
+            const status = this.mapStatus(m.label, score);
+
+            return {
+              name: candidate.email || candidate.fullName || 'Ứng viên',
+              recommendedJob: `${m.jobTitle} (${m.jobCode})`,
+              matchScore: score,
+              status,
+              tags: this.buildTags(summary, status, score),
+            };
+          });
 
         this.candidates = rows;
         this.selectedCandidate = rows[0];
@@ -257,4 +272,21 @@ export class AiClassificationComponent implements OnInit {
     };
     return map[v] || v || 'Chưa xác định';
   }
+
+  private displaySeniority(rawSeniority: string, status: CandidateStatus, score: number): string {
+    const s = (rawSeniority || '').trim();
+
+    // Nếu chỉ Potential/NotFit thì không nên show Lead "cứng"
+    if ((status === 'Potential' || status === 'NotFit') && s === 'Lead') {
+      return 'Mid'; // hoặc 'Senior' tùy bạn, nhưng Mid hợp lý nhất
+    }
+
+    // Optional: nếu NotFit mà Senior thì cũng hạ xuống Mid
+    if (status === 'NotFit' && s === 'Senior') {
+      return 'Mid';
+    }
+
+    return s || 'Unknown';
+  }
+
 }
