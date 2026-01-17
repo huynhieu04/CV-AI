@@ -105,18 +105,22 @@
                 <div *ngIf="matchSummary as summary" class="match-card__summary">
                     <p class="match-card__summary-title">Tóm Tắt Từ AI</p>
 
-                    <p *ngIf="summary.mainSkills.length">
-                        <strong>Kỹ Năng:</strong> {{ summary.mainSkills.join(', ') }}
-                    </p>
+                    <div *ngIf="summary.mainSkills.length" class="summary-row">
+                        <div class="summary-label">Kỹ năng:</div>
+                        <div class="summary-value">{{ summary.mainSkills.join(', ') }}</div>
+                    </div>
 
-                    <p *ngIf="summary.mainDomains.length">
-                        <strong>Lĩnh Vực:</strong> {{ summary.mainDomains.join(', ') }}
-                    </p>
+                    <div *ngIf="summary.mainDomains.length" class="summary-row">
+                        <div class="summary-label">Lĩnh vực:</div>
+                        <div class="summary-value">{{ summary.mainDomains.join(', ') }}</div>
+                    </div>
 
-                    <p *ngIf="summary.seniority">
-                        <strong>Cấp Độ:</strong> {{ summary.seniority }}
-                    </p>
+                    <div *ngIf="summary.seniority" class="summary-row">
+                        <div class="summary-label">Cấp độ:</div>
+                        <div class="summary-value">{{ summary.seniority }}</div>
+                    </div>
                 </div>
+
             </ng-container>
 
             <!-- Empty state -->

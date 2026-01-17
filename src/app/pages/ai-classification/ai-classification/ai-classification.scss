@@ -634,3 +634,24 @@
     background: transparent;
 }
 
+.summary-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+    align-items: flex-start;
+}
+
+.summary-label {
+    min-width: 70px; // chỉnh 70-90 tuỳ bạn
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+}
+
+.summary-value {
+    flex: 1;
+    color: #374151;
+    line-height: 1.5;
+    word-break: break-word; // cứu mấy chuỗi dài
+    overflow-wrap: anywhere;
+}
