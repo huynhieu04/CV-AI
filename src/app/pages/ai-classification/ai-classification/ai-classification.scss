@@ -634,15 +634,22 @@
     background: transparent;
 }
 
+.summary-box {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: 14px;
+}
+
 .summary-row {
     display: flex;
     gap: 10px;
-    margin-top: 6px;
     align-items: flex-start;
+    margin-bottom: 6px;
 }
 
 .summary-label {
-    min-width: 70px; // chỉnh 70-90 tuỳ bạn
+    min-width: 72px;
     font-weight: 600;
     color: #0f172a;
     white-space: nowrap;
@@ -652,6 +659,8 @@
     flex: 1;
     color: #374151;
     line-height: 1.5;
-    word-break: break-word; // cứu mấy chuỗi dài
+
+    /* 🔥 QUAN TRỌNG – chống text đâm mép */
+    word-break: break-word;
     overflow-wrap: anywhere;
 }
