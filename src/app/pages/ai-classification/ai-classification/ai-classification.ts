@@ -12,6 +12,15 @@ import {
 } from '../../../models/ai-classification.model';
 import { AiClassificationStateService } from '../../../services/ai-classification-state.service';
 
+type CvBatchItem = {
+  key: string;                 // candidateId hoặc cvFileId hoặc index
+  label: string;               // tên hiển thị
+  rows: CandidateRow[];        // danh sách job matches của CV này
+  summary: AiMatchSummary;     // summary của CV này
+  firstRow: CandidateRow | null;
+  error: string | null;
+};
+
 @Component({
   selector: 'app-ai-classification',
   standalone: true,
@@ -20,14 +29,20 @@ import { AiClassificationStateService } from '../../../services/ai-classificatio
   styleUrls: ['./ai-classification.scss'],
 })
 export class AiClassificationComponent implements OnInit {
-  // ✅ NEW: multiple files
+  // Upload (multiple)
   selectedFiles: File[] = [];
   selectedFileName: string | null = null;
 
+  // UI states
   isMatching = false;
   isLoadingFromDb = false;
   errorMessage: string | null = null;
 
+  // ✅ NEW: Batch results
+  batchItems: CvBatchItem[] = [];
+  activeBatchKey: string | null = null; // CV đang chọn để filter
+
+  // Table + right detail (theo CV đang chọn)
   candidates: CandidateRow[] = [];
   selectedCandidate: CandidateRow | null = null;
   matchTags: string[] = [];
@@ -43,21 +58,31 @@ export class AiClassificationComponent implements OnInit {
   ngOnInit(): void {
     this.restoreState();
 
+    // ✅ load theo candidateId trên URL (kể cả refresh/restart)
     this.route.queryParams.subscribe((params) => {
       const candidateId = params['candidateId'];
       if (candidateId) this.loadAiResultFromDb(candidateId);
     });
   }
 
+  /* =========================
+     STATE PERSIST
+  ========================= */
   private restoreState() {
     const snapshot = this.stateService.getSnapshot();
     if (!snapshot) return;
 
+    // các field cũ
     this.candidates = snapshot.candidates;
     this.selectedCandidate = snapshot.selectedCandidate;
     this.matchTags = snapshot.matchTags;
     this.matchSummary = snapshot.matchSummary;
     this.errorMessage = snapshot.errorMessage;
+
+    // các field mới (nếu chưa có thì bỏ qua)
+    const anySnap = snapshot as any;
+    this.batchItems = anySnap.batchItems || [];
+    this.activeBatchKey = anySnap.activeBatchKey || null;
   }
 
   private saveState() {
@@ -68,10 +93,18 @@ export class AiClassificationComponent implements OnInit {
       matchSummary: this.matchSummary,
       errorMessage: this.errorMessage,
     };
+
+    // đính kèm extra state
+    (state as any).batchItems = this.batchItems;
+    (state as any).activeBatchKey = this.activeBatchKey;
+
     this.stateService.setState(state);
   }
 
-  // ✅ NEW: multiple change handler
+  /* =========================
+     UPLOAD HANDLERS
+  ========================= */
+
   onFilesChange(event: Event, inputEl?: HTMLInputElement) {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files || []);
@@ -82,36 +115,42 @@ export class AiClassificationComponent implements OnInit {
       return;
     }
 
-    // (optional) lọc trùng theo name+size (tránh user chọn trùng)
+    // (optional) loại trùng theo name+size
     const map = new Map<string, File>();
-    for (const f of files) {
-      map.set(`${f.name}-${f.size}`, f);
-    }
-    const uniqueFiles = Array.from(map.values());
+    for (const f of files) map.set(`${f.name}-${f.size}`, f);
 
-    this.selectedFiles = uniqueFiles;
+    this.selectedFiles = Array.from(map.values());
 
-    // hiển thị tên file đẹp hơn
-    if (uniqueFiles.length === 1) {
-      this.selectedFileName = uniqueFiles[0].name;
+    if (this.selectedFiles.length === 1) {
+      this.selectedFileName = this.selectedFiles[0].name;
     } else {
-      const previewNames = uniqueFiles.slice(0, 2).map((f) => f.name).join(', ');
-      const more = uniqueFiles.length > 2 ? ` +${uniqueFiles.length - 2} file` : '';
-      this.selectedFileName = `${previewNames}${more}`;
+      const preview = this.selectedFiles.slice(0, 2).map((f) => f.name).join(', ');
+      const more = this.selectedFiles.length > 2 ? ` +${this.selectedFiles.length - 2} file` : '';
+      this.selectedFileName = `${preview}${more}`;
     }
 
     this.errorMessage = null;
 
-    // ✅ reset input để lần sau chọn lại cùng file vẫn trigger change
+    // ✅ reset input để chọn lại cùng file vẫn trigger change
     if (inputEl) inputEl.value = '';
   }
+
   clearSelectedFiles() {
     this.selectedFiles = [];
     this.selectedFileName = null;
     this.errorMessage = null;
+
+    this.batchItems = [];
+    this.activeBatchKey = null;
+
+    this.candidates = [];
+    this.selectedCandidate = null;
+    this.matchTags = [];
+    this.matchSummary = null;
+
+    this.saveState();
     this.cdr.detectChanges();
   }
-
 
   onRunMatching() {
     if (!this.selectedFiles.length) {
@@ -123,19 +162,33 @@ export class AiClassificationComponent implements OnInit {
     this.errorMessage = null;
     this.cdr.markForCheck();
 
-    // ✅ CASE 1: 1 file -> dùng flow cũ
+    // ===== CASE 1: 1 file =====
     if (this.selectedFiles.length === 1) {
       const file = this.selectedFiles[0];
 
       this.cvApi.uploadCv(file).subscribe({
         next: (res: any) => {
-          const { rows, summary, firstRow, error } = this.buildUiFromUploadResponse(res);
+          const built = this.buildUiFromUploadResponse(res);
 
-          this.matchSummary = summary;
-          this.candidates = rows;
-          this.selectedCandidate = firstRow;
-          this.matchTags = firstRow?.tags || [];
-          this.errorMessage = error;
+          const key = String(res?.candidate?._id || res?.cvFile?._id || 'single');
+          const label = this.buildCvLabel(res, file.name);
+
+          this.batchItems = [
+            {
+              key,
+              label,
+              rows: built.rows,
+              summary: built.summary,
+              firstRow: built.firstRow,
+              error: built.error,
+            },
+          ];
+
+          // set active = CV này
+          this.setActiveCv(key);
+
+          // show error nếu có
+          this.errorMessage = built.error;
 
           this.isMatching = false;
           this.saveState();
@@ -151,36 +204,46 @@ export class AiClassificationComponent implements OnInit {
       return;
     }
 
-    // ✅ CASE 2: nhiều file -> gọi batch
+    // ===== CASE 2: Batch =====
     this.cvApi.uploadCvBatch(this.selectedFiles).subscribe({
       next: (res: any) => {
         const results: any[] = Array.isArray(res?.results) ? res.results : [];
 
-        // lấy item đầu tiên ok có matchResult
-        const firstOk = results.find((x) => x?.ok && x?.matchResult);
-
-        if (!firstOk) {
+        const oks = results.filter((x) => x?.ok && x?.matchResult);
+        if (!oks.length) {
           this.isMatching = false;
           this.resetUi('Batch upload xong nhưng không có CV nào trả kết quả AI hợp lệ.');
           return;
         }
 
-        // render UI theo CV đầu tiên ok (giữ nguyên UI hiện tại của bạn)
-        const { rows, summary, firstRow, error } = this.buildUiFromUploadResponse(firstOk);
+        // build batch items (mỗi CV -> 1 item)
+        const items: CvBatchItem[] = oks.map((item, idx) => {
+          const built = this.buildUiFromUploadResponse(item);
+          const key = String(item?.candidate?._id || item?.cvFile?._id || `cv_${idx}`);
+          const fallbackFileName = this.selectedFiles[idx]?.name || `CV ${idx + 1}`;
+          const label = this.buildCvLabel(item, fallbackFileName);
 
-        this.matchSummary = summary;
-        this.candidates = rows;
-        this.selectedCandidate = firstRow;
-        this.matchTags = firstRow?.tags || [];
-        this.errorMessage = error || null;
+          return {
+            key,
+            label,
+            rows: built.rows,
+            summary: built.summary,
+            firstRow: built.firstRow,
+            error: built.error,
+          };
+        });
 
-        // nếu batch có file fail -> show thêm thông báo gợi ý (optional)
+        this.batchItems = items;
+
+        // auto chọn CV đầu tiên có rows
+        const firstHasRows = items.find((i) => i.rows.length)?.key || items[0].key;
+        this.setActiveCv(firstHasRows);
+
+        // báo fail nếu có
         const failed = results.filter((x) => !x?.ok);
-        if (failed.length) {
-          this.errorMessage =
-            (this.errorMessage ? this.errorMessage + ' ' : '') +
-            `(${failed.length}/${results.length} CV upload lỗi. Bạn kiểm tra định dạng/dung lượng.)`;
-        }
+        this.errorMessage = failed.length
+          ? `(${failed.length}/${results.length} CV upload lỗi. Kiểm tra định dạng/dung lượng.)`
+          : null;
 
         this.isMatching = false;
         this.saveState();
@@ -193,6 +256,41 @@ export class AiClassificationComponent implements OnInit {
       },
     });
   }
+
+  /* =========================
+     FILTER PER CV
+  ========================= */
+
+  setActiveCv(key: string) {
+    this.activeBatchKey = key;
+
+    const item = this.batchItems.find((x) => x.key === key);
+    if (!item) return;
+
+    // ✅ Table chỉ show rows của CV đang chọn
+    this.candidates = item.rows;
+
+    // ✅ Right panel chi tiết: default = top match
+    this.selectedCandidate = item.firstRow;
+    this.matchTags = item.firstRow?.tags || [];
+    this.matchSummary = item.summary;
+
+    // nếu CV này không có rows -> show error riêng (optional)
+    // nhưng mình không ghi đè errorMessage tổng batch
+    // bạn muốn thì bật dòng dưới:
+    // this.errorMessage = item.error;
+
+    this.saveState();
+    this.cdr.detectChanges();
+  }
+
+  isActiveCv(key: string): boolean {
+    return this.activeBatchKey === key;
+  }
+
+  /* =========================
+     BUILD UI FROM RESPONSE
+  ========================= */
 
   private buildUiFromUploadResponse(res: any) {
     const matchResult = res?.matchResult || {};
@@ -230,9 +328,6 @@ export class AiClassificationComponent implements OnInit {
         matchScore: score,
         status,
         tags: this.buildTags(summary, status, score),
-
-        //  thêm field nội bộ để khi click row thì update summary đúng
-        __summary: summary,
       } as any;
     });
 
@@ -249,6 +344,16 @@ export class AiClassificationComponent implements OnInit {
     ];
   }
 
+  private buildCvLabel(res: any, fallbackName: string) {
+    const email = res?.candidate?.email;
+    const fullName = res?.candidate?.fullName;
+    const fileName = res?.cvFile?.originalName || res?.cvFile?.filename || fallbackName;
+    return String(email || fullName || fileName || fallbackName);
+  }
+
+  /* =========================
+     LOAD FROM DB (single)
+  ========================= */
   private loadAiResultFromDb(candidateId: string) {
     this.isLoadingFromDb = true;
     this.errorMessage = null;
@@ -269,33 +374,24 @@ export class AiClassificationComponent implements OnInit {
           return;
         }
 
-        const summaryRaw = mr.candidateSummary || {};
-        const summary: AiMatchSummary = {
-          mainSkills: summaryRaw.mainSkills || [],
-          mainDomains: summaryRaw.mainDomains || [],
-          seniority: summaryRaw.seniority || '',
-        };
-        this.matchSummary = summary;
+        // build giống upload
+        const built = this.buildUiFromUploadResponse({ candidate, matchResult: mr });
 
-        const rows: CandidateRow[] = mr.matches
-          .slice()
-          .sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0))
-          .map((m: any) => {
-            const score = m.score ?? 0;
-            const status = this.mapStatus(m.label, score);
+        const key = String(candidate?._id || 'db');
+        const label = String(candidate?.email || candidate?.fullName || 'Ứng viên');
 
-            return {
-              name: candidate.email || candidate.fullName || 'Ứng viên',
-              recommendedJob: `${m.jobTitle} (${m.jobCode})`,
-              matchScore: score,
-              status,
-              tags: this.buildTags(summary, status, score),
-            };
-          });
+        this.batchItems = [
+          {
+            key,
+            label,
+            rows: built.rows,
+            summary: built.summary,
+            firstRow: built.firstRow,
+            error: built.error,
+          },
+        ];
 
-        this.candidates = rows;
-        this.selectedCandidate = rows[0];
-        this.matchTags = rows[0]?.tags || [];
+        this.setActiveCv(key);
 
         this.saveState();
         this.cdr.detectChanges();
@@ -309,22 +405,26 @@ export class AiClassificationComponent implements OnInit {
 
   private resetUi(message: string) {
     this.errorMessage = message;
+
+    this.batchItems = [];
+    this.activeBatchKey = null;
+
     this.candidates = [];
     this.selectedCandidate = null;
     this.matchTags = [];
     this.matchSummary = null;
+
     this.saveState();
     this.cdr.detectChanges();
   }
 
-  onSelectCandidate(candidate: CandidateRow) {
-    this.selectedCandidate = candidate;
-    this.matchTags = candidate.tags;
-
-    // ✅ update summary theo row (nếu có)
-    const anyCandidate = candidate as any;
-    if (anyCandidate?.__summary) this.matchSummary = anyCandidate.__summary;
-
+  /* =========================
+     TABLE SELECT (match row)
+  ========================= */
+  onSelectCandidate(row: CandidateRow) {
+    this.selectedCandidate = row;
+    this.matchTags = row.tags || [];
+    // matchSummary giữ theo CV đang chọn (đúng filter)
     this.saveState();
   }
 
