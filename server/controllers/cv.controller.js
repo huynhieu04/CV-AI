@@ -3,16 +3,15 @@ const { saveCvFile } = require("../services/file.service");
 const { parseCvFromPath } = require("../services/cv-parser.service");
 const { matchCandidateToJobs } = require("../services/aiMatching.service");
 
+// Upload 1 CV
 async function uploadAndMatchCv(req, res) {
     try {
         if (!req.file) {
             return res.status(400).json({ ok: false, message: "File is missing" });
         }
 
-        // 1) Save file info to CvFile collection
         const cvFileDoc = await saveCvFile(req.file);
 
-        // 2) Parse CV (PDF -> rawText -> Candidate)
         const { candidate, rawText, text } = await parseCvFromPath(
             cvFileDoc.absolutePath,
             cvFileDoc._id
@@ -20,10 +19,8 @@ async function uploadAndMatchCv(req, res) {
 
         const finalRawText = rawText || text || candidate?.rawText || "";
 
-        // 3) Match with Jobs
         const matchResult = await matchCandidateToJobs(candidate, finalRawText, cvFileDoc._id);
 
-        // 4) Save matchResult into Candidate for FE
         candidate.matchResult = matchResult;
         await candidate.save();
 
@@ -39,4 +36,59 @@ async function uploadAndMatchCv(req, res) {
     }
 }
 
-module.exports = { uploadAndMatchCv };
+// Upload nhiều CV
+async function uploadAndMatchCvBatch(req, res) {
+    try {
+        const files = req.files || [];
+        if (!files.length) {
+            return res.status(400).json({ ok: false, message: "Files are missing" });
+        }
+
+        const results = [];
+
+        for (const file of files) {
+            try {
+                const cvFileDoc = await saveCvFile(file);
+
+                const { candidate, rawText, text } = await parseCvFromPath(
+                    cvFileDoc.absolutePath,
+                    cvFileDoc._id
+                );
+
+                const finalRawText = rawText || text || candidate?.rawText || "";
+
+                const matchResult = await matchCandidateToJobs(candidate, finalRawText, cvFileDoc._id);
+
+                candidate.matchResult = matchResult;
+                await candidate.save();
+
+                results.push({
+                    ok: true,
+                    fileName: file.originalname,
+                    cvFile: cvFileDoc,
+                    candidate,
+                    matchResult,
+                });
+            } catch (errOne) {
+                results.push({
+                    ok: false,
+                    fileName: file.originalname,
+                    message: errOne?.message || "Process failed",
+                });
+            }
+        }
+
+        return res.json({
+            ok: true,
+            total: files.length,
+            success: results.filter((x) => x.ok).length,
+            failed: results.filter((x) => !x.ok).length,
+            results,
+        });
+    } catch (e) {
+        console.error("[uploadAndMatchCvBatch]", e);
+        return res.status(500).json({ ok: false, message: e.message || "Server error" });
+    }
+}
+
+module.exports = { uploadAndMatchCv, uploadAndMatchCvBatch };
