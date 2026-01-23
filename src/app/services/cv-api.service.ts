@@ -4,25 +4,19 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-
-// ✅ Lấy base URL theo environment (dev/prod)
 const API_BASE = environment.apiBaseUrl;
 
-@Injectable({
-    providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class CvApiService {
     constructor(private http: HttpClient) { }
 
     /* =======================
        JOBS
     ======================= */
-
     getJobs(): Observable<any[]> {
         return this.http.get<any>(`${API_BASE}/jobs`).pipe(map((res) => res?.jobs ?? []));
     }
 
-    // search server-side (dùng cho header search nếu muốn)
     searchJobs(keyword: string): Observable<any[]> {
         const params = new HttpParams().set('q', keyword || '');
         return this.http.get<any>(`${API_BASE}/jobs`, { params }).pipe(map((res) => res?.jobs ?? []));
@@ -53,7 +47,6 @@ export class CvApiService {
     /* =======================
        CANDIDATES
     ======================= */
-
     getCandidates(): Observable<any[]> {
         return this.http.get<any>(`${API_BASE}/candidates`).pipe(map((res) => res?.candidates ?? []));
     }
@@ -69,11 +62,25 @@ export class CvApiService {
     /* =======================
        CV + AI
     ======================= */
-
     uploadCv(file: File): Observable<any> {
         const form = new FormData();
-        form.append('file', file);
+        form.append('file', file); // key "file" khớp upload.single("file")
         return this.http.post<any>(`${API_BASE}/cv/upload`, form);
+    }
+
+    // ✅ NEW: upload nhiều CV cùng lúc
+    uploadCvBatch(files: File[]): Observable<any> {
+        const form = new FormData();
+        for (const f of files) {
+            form.append('files', f); // key "files" khớp upload.array("files", 20)
+        }
+        return this.http.post<any>(`${API_BASE}/cv/upload-batch`, form);
+    }
+
+    // ✅ NEW: tiện dùng (1 file thì dùng uploadCv, nhiều file thì uploadCvBatch)
+    uploadCvSmart(files: File[] | File): Observable<any> {
+        const list = Array.isArray(files) ? files : [files];
+        return list.length <= 1 ? this.uploadCv(list[0]) : this.uploadCvBatch(list);
     }
 
     matchOne(candidateId: string, jobId: string): Observable<any> {
@@ -87,7 +94,6 @@ export class CvApiService {
     /* =======================
        REPORTS / SETTINGS
     ======================= */
-
     getOverviewReport(): Observable<any> {
         return this.http.get<any>(`${API_BASE}/reports/summary`);
     }
@@ -103,7 +109,6 @@ export class CvApiService {
     /* =======================
        USERS (ADMIN)
     ======================= */
-
     getUsers(): Observable<any[]> {
         return this.http.get<any>(`${API_BASE}/users`).pipe(map((res) => res?.users ?? []));
     }

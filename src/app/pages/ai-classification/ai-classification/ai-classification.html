@@ -28,34 +28,42 @@
                 tất cả vị trí tuyển dụng trong hệ thống.
             </p>
             <!-- Upload area -->
+            <!-- Upload area -->
             <label class="upload-box__area">
-                <input type="file" class="upload-box__input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    (change)="onFileChange($event)" />
+                <input #fileInput type="file" multiple class="upload-box__input"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" (change)="onFilesChange($event, fileInput)" />
+
                 <div class="upload-box__content">
                     <div class="tag-pill">
                         {{ selectedFileName || 'Chọn hoặc kéo CV vào đây' }}
                     </div>
+
                     <div class="upload-box__text">
                         {{
                         selectedFileName
                         ? 'Đã chọn: ' + selectedFileName
-                        : 'Hỗ trợ PDF, DOC/DOCX, JPG/PNG. Dung lượng < 10MB.' }} </div>
-
+                        : 'Hỗ trợ PDF, DOC/DOCX, JPG/PNG. Dung lượng < 10MB/file.' }} </div>
                     </div>
             </label>
 
             <!-- Nút chạy AI -->
             <div class="run-row">
                 <button class="btn btn--primary" type="button" (click)="onRunMatching()"
-                    [disabled]="!selectedFile || isMatching">
+                    [disabled]="!selectedFiles.length || isMatching">
                     <span *ngIf="!isMatching">🚀 Xử Lí CV</span>
                     <span *ngIf="isMatching">🤖 AI đang xử lý...</span>
                 </button>
+
+                <button class="btn btn--ghost" type="button" (click)="clearSelectedFiles()" [disabled]="isMatching">
+                    🧹 Xóa file
+                </button>
+
                 <span class="run-row__hint">
                     Flow: Upload CV → Backend parse PDF/Word → Chuẩn hóa dữ liệu → Gọi Gemini phân tích →
                     Xếp hạng các job theo mức độ phù hợp.
                 </span>
             </div>
+
 
             <!-- Error -->
             <p *ngIf="errorMessage" class="error-text">
