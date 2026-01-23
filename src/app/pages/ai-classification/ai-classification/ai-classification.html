@@ -1,5 +1,4 @@
 <div class="page">
-    <!-- HEADER -->
     <header class="page__header">
         <div>
             <h1 class="page__title">Phân Loại CV</h1>
@@ -8,33 +7,28 @@
                 để so khớp với các Job Description trong hệ thống.
             </p>
             <p class="page__subtitle page__subtitle--meta">
-                AI + Gemini • Graduation Project • Flow: Upload CV → AI phân tích → Gợi ý & xếp hạng các job phù hợp.
+                AI + Gemini • Graduation Project • Flow: Upload CV → AI phân tích → Gợi ý & xếp hạng job phù hợp.
             </p>
         </div>
     </header>
 
-    <!-- GRID 2 CỘT -->
     <div class="page__grid">
-        <!-- LEFT: Upload -->
+        <!-- LEFT -->
         <section class="card card--upload">
             <h2 class="card__title">1. Upload CV để AI đọc & phân loại</h2>
             <p class="card__sub card__sub--upload">
                 Hỗ trợ <span class="fmt">PDF</span>, <span class="fmt">DOC/DOCX</span>, <span
                     class="fmt">JPG/PNG</span>.
-                Sau khi upload, backend sẽ trích xuất text, chuẩn hóa dữ liệu và chạy AI để so khớp với
-                tất cả vị trí tuyển dụng trong hệ thống.
+                Sau khi upload, backend sẽ trích xuất text và chạy AI để so khớp với các vị trí trong hệ thống.
             </p>
 
-            <!-- Upload area -->
             <label class="upload-box__area">
-                <input #fileInput type="file" multiple class="upload-box__input"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" (change)="onFilesChange($event, fileInput)" />
-
+                <input type="file" multiple class="upload-box__input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    (change)="onFilesChange($event)" />
                 <div class="upload-box__content">
                     <div class="tag-pill">
                         {{ selectedFileName || 'Chọn hoặc kéo CV vào đây' }}
                     </div>
-
                     <div class="upload-box__text">
                         {{
                         selectedFileName
@@ -43,7 +37,7 @@
                     </div>
             </label>
 
-            <!-- Actions -->
+            <!-- Buttons gọn -->
             <div class="run-row">
                 <div class="run-actions">
                     <button class="btn btn--primary btn--sm" type="button" (click)="onRunMatching()"
@@ -53,110 +47,105 @@
                         <span *ngIf="isMatching">Đang xử lý...</span>
                     </button>
 
-                    <button class="btn btn--ghost btn--sm" type="button" (click)="clearSelectedFiles()"
-                        [disabled]="isMatching">
+                    <button class="btn btn--ghost btn--sm" type="button" (click)="clearFiles()"
+                        [disabled]="(!selectedFiles.length && !cvResults.length) || isMatching">
                         <span class="btn__icon">🧹</span>
-                        Xóa
+                        Xóa file
                     </button>
                 </div>
 
                 <span class="run-row__hint">
-                    Flow: Upload CV → Backend parse PDF/Word → Chuẩn hóa dữ liệu → Gọi Gemini phân tích → Xếp hạng job.
+                    Upload nhiều CV → chọn từng CV bên phải để xem kết quả chi tiết.
                 </span>
             </div>
 
-            <!-- Error -->
             <p *ngIf="errorMessage" class="error-text">
                 {{ errorMessage }}
             </p>
         </section>
 
-        <!-- RIGHT: Results -->
+        <!-- RIGHT -->
         <section class="card card--result">
-            <ng-container *ngIf="batchItems.length; else emptyResult">
-                <!-- ✅ CV selector list (filter theo CV) -->
-                <div class="cv-switcher">
-                    <div class="cv-switcher__title">Danh sách CV đã upload</div>
+            <!-- ✅ CV switcher (lọc từng CV) -->
+            <div class="cv-switcher" *ngIf="cvResults.length">
+                <div class="cv-switcher__title">Kết quả theo từng CV ({{ cvResults.length }})</div>
 
-                    <div class="cv-list">
-                        <button class="cv-item" *ngFor="let it of batchItems" type="button"
-                            (click)="setActiveCv(it.key)" [class.cv-item--active]="isActiveCv(it.key)">
-                            <div class="cv-item__name">{{ it.label }}</div>
-                            <div class="cv-item__meta">
-                                <span class="cv-item__pill">{{ it.rows.length }} job</span>
-                                <span class="cv-item__pill" *ngIf="it.firstRow as fr">{{ fr.matchScore }}%</span>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- ✅ Detail panel (giống UI cũ, nhưng theo CV đang chọn) -->
-                <div class="detail-panel" *ngIf="selectedCandidate; else noDetail">
-                    <div class="match-card__header">
-                        <div>
-                            <h2 class="card__title">
-                                {{ selectedCandidate.name }}
-                            </h2>
-                            <p class="card__sub">
-                                Đề xuất: {{ selectedCandidate.recommendedJob }}
-                            </p>
-
-                            <div class="match-card__tags">
-                                <span class="tag-pill" *ngFor="let t of matchTags">{{ t }}</span>
-                            </div>
+                <div class="cv-list">
+                    <button class="cv-item" *ngFor="let item of cvResults" (click)="setActiveCv(item.id)"
+                        [class.cv-item--active]="item.id === activeCvId" type="button">
+                        <div class="cv-item__name">
+                            {{ item.fileName }}
                         </div>
 
-                        <div class="match-card__score-wrap">
-                            <div class="match-card__score-label">Mức Độ Phù Hợp</div>
-                            <div class="match-card__score-value">
-                                {{ selectedCandidate.matchScore }}%
-                            </div>
-                            <div class="match-card__bar">
-                                <div class="match-card__bar-fill" [style.width.%]="selectedCandidate.matchScore"></div>
-                            </div>
+                        <div class="cv-item__meta">
+                            <span class="cv-item__pill" *ngIf="item.ok">OK</span>
+                            <span class="cv-item__pill" *ngIf="!item.ok">FAIL</span>
+                            <span class="cv-item__pill" *ngIf="item.ok && item.firstRow">
+                                {{ item.firstRow.matchScore }}%
+                            </span>
+                            <span class="cv-item__pill" *ngIf="item.ok && item.firstRow">
+                                {{ statusLabel(item.firstRow.status) }}
+                            </span>
+                        </div>
+                    </button>
+                </div>
+            </div>
 
-                            <div class="match-card__status-row">
-                                <span class="match-card__status-label">Trạng thái</span>
-                                <span class="badge" [ngClass]="{
+            <!-- DETAIL PANEL -->
+            <div class="detail-panel" *ngIf="selectedCandidate; else emptyResult">
+                <div class="match-card__header">
+                    <div>
+                        <h2 class="card__title">{{ selectedCandidate.name }}</h2>
+                        <p class="card__sub">Đề xuất: {{ selectedCandidate.recommendedJob }}</p>
+
+                        <div class="match-card__tags">
+                            <span class="tag-pill" *ngFor="let t of matchTags">{{ t }}</span>
+                        </div>
+                    </div>
+
+                    <div class="match-card__score-wrap">
+                        <div class="match-card__score-label">Mức Độ Phù Hợp</div>
+                        <div class="match-card__score-value">{{ selectedCandidate.matchScore }}%</div>
+
+                        <div class="match-card__bar">
+                            <div class="match-card__bar-fill" [style.width.%]="selectedCandidate.matchScore"></div>
+                        </div>
+
+                        <div class="match-card__status-row">
+                            <span class="match-card__status-label">Trạng thái</span>
+                            <span class="badge" [ngClass]="{
                   'badge--success': selectedCandidate.status === 'Suitable',
                   'badge--warning': selectedCandidate.status === 'Potential',
                   'badge--danger': selectedCandidate.status === 'NotFit'
                 }">
-                                    {{ statusLabel(selectedCandidate.status) }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Summary từ AI -->
-                    <div *ngIf="matchSummary as summary" class="match-card__summary">
-                        <p class="match-card__summary-title">Tóm Tắt Từ AI</p>
-
-                        <div *ngIf="summary.mainSkills.length" class="summary-row">
-                            <div class="summary-label">Kỹ năng:</div>
-                            <div class="summary-value">{{ summary.mainSkills.join(', ') }}</div>
-                        </div>
-
-                        <div *ngIf="summary.mainDomains.length" class="summary-row">
-                            <div class="summary-label">Lĩnh vực:</div>
-                            <div class="summary-value">{{ summary.mainDomains.join(', ') }}</div>
-                        </div>
-
-                        <div *ngIf="summary.seniority" class="summary-row">
-                            <div class="summary-label">Cấp độ:</div>
-                            <div class="summary-value">{{ seniorityLabel(summary.seniority) }}</div>
+                                {{ statusLabel(selectedCandidate.status) }}
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                <ng-template #noDetail>
-                    <div class="empty-mini">
-                        CV này chưa có kết quả phù hợp (hoặc bị lọc dưới 10%).
-                    </div>
-                </ng-template>
-            </ng-container>
+                <!-- Summary -->
+                <div *ngIf="matchSummary as summary" class="match-card__summary">
+                    <p class="match-card__summary-title">Tóm Tắt Từ AI</p>
 
-            <!-- Empty state -->
+                    <div *ngIf="summary.mainSkills.length" class="summary-row">
+                        <div class="summary-label">Kỹ năng:</div>
+                        <div class="summary-value">{{ summary.mainSkills.join(', ') }}</div>
+                    </div>
+
+                    <div *ngIf="summary.mainDomains.length" class="summary-row">
+                        <div class="summary-label">Lĩnh vực:</div>
+                        <div class="summary-value">{{ summary.mainDomains.join(', ') }}</div>
+                    </div>
+
+                    <div *ngIf="summary.seniority" class="summary-row">
+                        <div class="summary-label">Cấp độ:</div>
+                        <div class="summary-value">{{ summary.seniority }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMPTY -->
             <ng-template #emptyResult>
                 <div class="empty-state">
                     <div class="robot" [class.robot--thinking]="isMatching || isLoadingFromDb">
@@ -173,7 +162,7 @@
 
                     <p class="empty-state__text">
                         <ng-container *ngIf="!isMatching">
-                            Hãy upload một hoặc nhiều CV, hệ thống sẽ tự động phân tích và gợi ý công việc phù hợp nhất.
+                            Hãy upload CV, hệ thống sẽ tự động phân tích và hiển thị kết quả.
                         </ng-container>
                         <ng-container *ngIf="isMatching">
                             Đang trích xuất nội dung CV, chuẩn hóa dữ liệu và so khớp với Job Description...
@@ -183,19 +172,22 @@
                     <div *ngIf="isMatching || isLoadingFromDb" class="loading-dots">
                         <span></span><span></span><span></span>
                     </div>
+
+                    <div *ngIf="cvResults.length && !selectedCandidate" class="empty-mini">
+                        Bạn đã có danh sách CV bên trên, hãy chọn 1 CV để xem chi tiết.
+                    </div>
                 </div>
             </ng-template>
         </section>
     </div>
 
-    <!-- TABLE: Xếp hạng các job (✅ đã filter theo CV đang chọn) -->
+    <!-- TABLE -->
     <section class="card page__section--below" *ngIf="candidates.length">
         <div class="card__header">
             <div>
                 <h2 class="card__title">Kết Quả AI So Khớp</h2>
                 <p class="card__sub">
-                    Danh sách các vị trí phù hợp được AI xếp hạng từ cao đến thấp. Click một dòng để xem chi tiết bên
-                    phải.
+                    Danh sách các vị trí phù hợp được AI xếp hạng từ cao đến thấp. Click vào một dòng để xem chi tiết.
                 </p>
             </div>
         </div>
@@ -217,10 +209,10 @@
                     <td>{{ c.matchScore }}%</td>
                     <td>
                         <span class="badge" [ngClass]="{
-              'badge--success': c.status === 'Suitable',
-              'badge--warning': c.status === 'Potential',
-              'badge--danger': c.status === 'NotFit'
-            }">
+                'badge--success': c.status === 'Suitable',
+                'badge--warning': c.status === 'Potential',
+                'badge--danger': c.status === 'NotFit'
+              }">
                             {{ statusLabel(c.status) }}
                         </span>
                     </td>
