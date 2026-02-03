@@ -1,16 +1,21 @@
 // server/models/cv-file.model.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const cvFileSchema = new mongoose.Schema(
     {
-        originalName: String,
-        mimeType: String,
-        size: Number,
-        absolutePath: { type: String, required: true },
+        originalName: { type: String },
+        mimeType: { type: String },
+        size: { type: Number },
+
+        // ❌ KHÔNG bắt buộc nữa
+        absolutePath: { type: String, required: false },
+
+        // ✅ LƯU BUFFER (đúng với memoryStorage)
+        buffer: { type: Buffer },
+
         uploadedAt: { type: Date, default: Date.now },
     },
     { timestamps: true }
 );
 
-// TÊN MODEL phải đúng y như trong ref: 'CVFile'
-module.exports = mongoose.model('CVFile', cvFileSchema);
+module.exports = mongoose.model("CVFile", cvFileSchema);
