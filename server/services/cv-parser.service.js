@@ -1,8 +1,11 @@
 const Candidate = require("../models/candidate.model");
-const { extractTextFromAbsolutePath } = require("../utils/extractText");
+const pdfParse = require("pdf-parse");
+const mammoth = require("mammoth");
 const { extractCvProfileByGemini } = require("./cv-extract-ai.service");
 
-/* fallback basic */
+/* =========================
+   FALLBACK BASIC
+========================= */
 function extractEmailFromText(text) {
     const emailRegex = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
     const match = String(text || "").match(emailRegex);
@@ -18,19 +21,44 @@ function extractPhoneFromText(text) {
     return String(match[0]).replace(/\s+/g, " ").trim();
 }
 
-async function parseCvFromPath(absolutePath, cvFileId) {
-    // 1) Extract raw text
-    const rawText = await extractTextFromAbsolutePath(absolutePath);
+/* =========================
+   MAIN: PARSE FROM BUFFER
+========================= */
+async function parseCvFromBuffer(buffer, mimeType, cvFileId) {
+    if (!buffer) throw new Error("CV buffer is missing");
 
-    // 2) Gemini auto extract profile
+    let rawText = "";
+
+    // PDF
+    if (mimeType.includes("pdf")) {
+        const data = await pdfParse(buffer);
+        rawText = data.text || "";
+    }
+
+    // DOCX
+    else if (mimeType.includes("word")) {
+        const result = await mammoth.extractRawText({ buffer });
+        rawText = result.value || "";
+    }
+
+    // IMAGE (OCR placeholder)
+    else if (mimeType.startsWith("image/")) {
+        rawText = ""; // ⚠️ có thể tích hợp Tesseract sau
+    }
+
+    else {
+        throw new Error("Unsupported CV file type");
+    }
+
+    // 2️⃣ Gemini AI extract
     const ai = await extractCvProfileByGemini(rawText);
 
-    // 3) Fallback nếu thiếu email/phone
+    // 3️⃣ Fallback
     const email = ai.email || extractEmailFromText(rawText);
     const phone = ai.phone || extractPhoneFromText(rawText);
     const fullName = ai.fullName || "Candidate from CV";
 
-    // 4) Save candidate (create)
+    // 4️⃣ Save candidate
     const candidate = await Candidate.create({
         fullName,
         email,
@@ -45,10 +73,10 @@ async function parseCvFromPath(absolutePath, cvFileId) {
     });
 
     return {
-        text: rawText,     // ✅ giữ field text như controller đang dùng
-        rawText: rawText,  // ✅ thêm rawText cho rõ ràng
+        text: rawText,     // ✅ giữ tương thích controller
+        rawText,
         candidate,
     };
 }
 
-module.exports = { parseCvFromPath };
+module.exports = { parseCvFromBuffer };

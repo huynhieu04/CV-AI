@@ -1,6 +1,6 @@
 // server/controllers/cv.controller.js
 const { saveCvFile } = require("../services/file.service");
-const { parseCvFromPath } = require("../services/cv-parser.service");
+const { parseCvFromBuffer } = require("../services/cv-parser.service");
 const { matchCandidateToJobs } = require("../services/aiMatching.service");
 
 // Upload 1 CV
@@ -12,14 +12,19 @@ async function uploadAndMatchCv(req, res) {
 
         const cvFileDoc = await saveCvFile(req.file);
 
-        const { candidate, rawText, text } = await parseCvFromPath(
-            cvFileDoc.absolutePath,
+        const { candidate, rawText, text } = await parseCvFromBuffer(
+            req.file.buffer,
+            req.file.mimetype,
             cvFileDoc._id
         );
 
         const finalRawText = rawText || text || candidate?.rawText || "";
 
-        const matchResult = await matchCandidateToJobs(candidate, finalRawText, cvFileDoc._id);
+        const matchResult = await matchCandidateToJobs(
+            candidate,
+            finalRawText,
+            cvFileDoc._id
+        );
 
         candidate.matchResult = matchResult;
         await candidate.save();
@@ -32,7 +37,10 @@ async function uploadAndMatchCv(req, res) {
         });
     } catch (e) {
         console.error("[uploadAndMatchCv]", e);
-        return res.status(500).json({ ok: false, message: e.message || "Server error" });
+        return res.status(500).json({
+            ok: false,
+            message: e.message || "Server error",
+        });
     }
 }
 
@@ -50,14 +58,19 @@ async function uploadAndMatchCvBatch(req, res) {
             try {
                 const cvFileDoc = await saveCvFile(file);
 
-                const { candidate, rawText, text } = await parseCvFromPath(
-                    cvFileDoc.absolutePath,
+                const { candidate, rawText, text } = await parseCvFromBuffer(
+                    file.buffer,
+                    file.mimetype,
                     cvFileDoc._id
                 );
 
                 const finalRawText = rawText || text || candidate?.rawText || "";
 
-                const matchResult = await matchCandidateToJobs(candidate, finalRawText, cvFileDoc._id);
+                const matchResult = await matchCandidateToJobs(
+                    candidate,
+                    finalRawText,
+                    cvFileDoc._id
+                );
 
                 candidate.matchResult = matchResult;
                 await candidate.save();
@@ -70,6 +83,7 @@ async function uploadAndMatchCvBatch(req, res) {
                     matchResult,
                 });
             } catch (errOne) {
+                console.error("[uploadAndMatchCvBatch:item]", errOne);
                 results.push({
                     ok: false,
                     fileName: file.originalname,
@@ -87,7 +101,10 @@ async function uploadAndMatchCvBatch(req, res) {
         });
     } catch (e) {
         console.error("[uploadAndMatchCvBatch]", e);
-        return res.status(500).json({ ok: false, message: e.message || "Server error" });
+        return res.status(500).json({
+            ok: false,
+            message: e.message || "Server error",
+        });
     }
 }
 

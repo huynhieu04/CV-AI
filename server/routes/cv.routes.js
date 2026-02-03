@@ -93,9 +93,10 @@ function isValidMimeByExt(ext, mimetype) {
  * (10MB / file)
  */
 const upload = multer({
-    storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB / file
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 3 * 1024 * 1024 }, // Render-safe
 });
+
 
 /**
  * ======================================================
